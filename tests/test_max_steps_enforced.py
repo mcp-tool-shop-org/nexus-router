@@ -1,6 +1,6 @@
+from nexus_router import events as E
 from nexus_router.event_store import EventStore
 from nexus_router.router import Router
-from nexus_router import events as E
 
 
 def test_max_steps_exceeded_causes_run_failed():
@@ -22,7 +22,10 @@ def test_max_steps_exceeded_causes_run_failed():
     types = [e.type for e in events]
     assert E.RUN_FAILED in types
 
-    failed_event = next(e for e in events if e.type == E.RUN_FAILED and e.payload.get("reason") == "max_steps_exceeded")
+    failed_event = next(
+        e for e in events
+        if e.type == E.RUN_FAILED and e.payload.get("reason") == "max_steps_exceeded"
+    )
     assert failed_event.payload["max_steps"] == 1
     assert failed_event.payload["plan_steps"] == 2
 

@@ -1,5 +1,6 @@
 from nexus_router.event_store import EventStore
 
+
 def test_seq_monotonic():
     store = EventStore(":memory:")
     run_id = store.create_run(mode="dry_run", goal="x")

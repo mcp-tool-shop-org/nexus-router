@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from importlib import resources
-from typing import Any, Dict
+from typing import Any, Dict, cast
 
 from .event_store import EventStore
 from .router import Router
@@ -17,7 +17,7 @@ def _load_request_schema() -> Dict[str, Any]:
     with resources.files("nexus_router").joinpath(
         "schemas/nexus-router.run.request.v0.1.json"
     ).open("r", encoding="utf-8") as f:
-        return json.load(f)
+        return cast(Dict[str, Any], json.load(f))
 
 
 def run(request: Dict[str, Any], *, db_path: str = ":memory:") -> Dict[str, Any]:

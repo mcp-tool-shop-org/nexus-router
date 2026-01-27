@@ -2,15 +2,16 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
+from . import events as E
 from .event_store import EventStore
 from .policy import gate_apply
 from .provenance import build_provenance_bundle
-from . import events as E
 
 
 def create_plan(request: Dict[str, Any]) -> List[Dict[str, Any]]:
     # v0.1: fixture-driven planner
-    return request.get("plan_override", [])
+    plan: List[Dict[str, Any]] = request.get("plan_override", [])
+    return plan
 
 
 def _unique_in_order(items: List[str]) -> List[str]:
@@ -44,11 +45,12 @@ class Router:
             max_steps_i = int(max_steps)
             if len(plan) > max_steps_i:
                 outcome = "error"
-                self.store.append(
-                    run_id,
-                    E.RUN_FAILED,
-                    {"reason": "max_steps_exceeded", "max_steps": max_steps_i, "plan_steps": len(plan)},
-                )
+                fail_payload = {
+                    "reason": "max_steps_exceeded",
+                    "max_steps": max_steps_i,
+                    "plan_steps": len(plan),
+                }
+                self.store.append(run_id, E.RUN_FAILED, fail_payload)
                 self.store.set_run_status(run_id, "FAILED")
                 plan = plan[:max_steps_i]
 
@@ -132,14 +134,19 @@ class Router:
         tools_used_u = _unique_in_order(tools_used)
         events_committed = len(self.store.read_events(run_id))
 
+        applied_count = (
+            0 if mode == "dry_run" else sum(1 for r in results if r["status"] == "ok")
+        )
+        skipped_count = sum(1 for r in results if r["status"] != "ok")
+
         return {
             "summary": {
                 "mode": mode,
                 "steps": len(plan),
                 "tools_used": tools_used_u,
                 "outputs_total": len(results),
-                "outputs_applied": 0 if mode == "dry_run" else sum(1 for r in results if r["status"] == "ok"),
-                "outputs_skipped": sum(1 for r in results if r["status"] != "ok"),
+                "outputs_applied": applied_count,
+                "outputs_skipped": skipped_count,
             },
             "run": {"run_id": run_id, "events_committed": events_committed},
             "plan": plan,

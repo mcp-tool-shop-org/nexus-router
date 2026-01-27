@@ -6,7 +6,6 @@ import uuid
 from dataclasses import dataclass
 from typing import Any, Dict, List
 
-
 SCHEMA_SQL = """
 PRAGMA journal_mode=WAL;
 PRAGMA foreign_keys=ON;
@@ -62,7 +61,12 @@ class EventStore:
     def __enter__(self) -> "EventStore":
         return self
 
-    def __exit__(self, exc_type, exc, tb) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: object,
+    ) -> None:
         self.close()
 
     def create_run(self, *, mode: str, goal: str) -> str:
@@ -83,10 +87,11 @@ class EventStore:
 
             event_id = str(uuid.uuid4())
             payload_json = json.dumps(payload, sort_keys=True, separators=(",", ":"))
-            self.conn.execute(
-                "INSERT INTO events(event_id, run_id, seq, type, payload_json) VALUES (?, ?, ?, ?, ?)",
-                (event_id, run_id, seq, event_type, payload_json),
+            sql = (
+                "INSERT INTO events(event_id, run_id, seq, type, payload_json) "
+                "VALUES (?, ?, ?, ?, ?)"
             )
+            self.conn.execute(sql, (event_id, run_id, seq, event_type, payload_json))
             (ts,) = self.conn.execute(
                 "SELECT ts FROM events WHERE event_id=?",
                 (event_id,),
@@ -102,12 +107,15 @@ class EventStore:
         )
 
     def read_events(self, run_id: str) -> List[EventRow]:
-        rows = self.conn.execute(
-            "SELECT event_id, run_id, seq, type, payload_json, ts FROM events WHERE run_id=? ORDER BY seq ASC",
-            (run_id,),
-        ).fetchall()
+        sql = (
+            "SELECT event_id, run_id, seq, type, payload_json, ts "
+            "FROM events WHERE run_id=? ORDER BY seq ASC"
+        )
+        rows = self.conn.execute(sql, (run_id,)).fetchall()
         return [
-            EventRow(event_id=eid, run_id=rid, seq=seq, type=etype, payload=json.loads(pj), ts=ts)
+            EventRow(
+                event_id=eid, run_id=rid, seq=seq, type=etype, payload=json.loads(pj), ts=ts
+            )
             for (eid, rid, seq, etype, pj, ts) in rows
         ]
 

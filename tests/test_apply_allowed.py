@@ -1,6 +1,6 @@
+from nexus_router import events as E
 from nexus_router.event_store import EventStore
 from nexus_router.router import Router
-from nexus_router import events as E
 
 
 def test_apply_allowed_succeeds():
@@ -11,7 +11,9 @@ def test_apply_allowed_succeeds():
         "mode": "apply",
         "goal": "test",
         "policy": {"allow_apply": True},
-        "plan_override": [{"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}],
+        "plan_override": [
+            {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}
+        ],
     })
 
     run_id = resp["run"]["run_id"]

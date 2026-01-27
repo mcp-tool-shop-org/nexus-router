@@ -1,6 +1,7 @@
+from nexus_router import events as E
 from nexus_router.event_store import EventStore
 from nexus_router.router import Router
-from nexus_router import events as E
+
 
 def test_required_events_in_order_empty_plan():
     store = EventStore(":memory:")
