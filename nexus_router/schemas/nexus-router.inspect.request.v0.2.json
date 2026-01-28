@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "nexus-router.inspect.request.v0.2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["db_path"],
+  "properties": {
+    "db_path": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Path to SQLite database file"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Filter to specific run"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["RUNNING", "COMPLETED", "FAILED"],
+      "description": "Filter by run status"
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "default": 50,
+      "description": "Max runs to return"
+    },
+    "offset": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "Pagination offset"
+    },
+    "since": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC3339 timestamp to filter runs created after"
+    }
+  }
+}

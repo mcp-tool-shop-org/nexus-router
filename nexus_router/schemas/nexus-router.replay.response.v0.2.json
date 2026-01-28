@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "nexus-router.replay.response.v0.2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ok", "run_view", "violations"],
+  "properties": {
+    "ok": {
+      "type": "boolean",
+      "description": "True if no invariant violations (in strict mode)"
+    },
+    "run_view": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "run_id": { "type": "string" },
+        "status": { "type": ["string", "null"] },
+        "outcome": { "type": ["string", "null"], "enum": ["ok", "error", null] },
+        "mode": { "type": ["string", "null"] },
+        "goal": { "type": ["string", "null"] },
+        "steps": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "step_id": { "type": "string" },
+              "started_seq": { "type": ["integer", "null"] },
+              "completed_seq": { "type": ["integer", "null"] },
+              "tool_call_requested_seq": { "type": ["integer", "null"] },
+              "tool_call_result_seq": { "type": ["integer", "null"] },
+              "status": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "tools_used": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "provenance_present": { "type": "boolean" },
+        "terminal_event_type": { "type": ["string", "null"] }
+      }
+    },
+    "violations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "seq": { "type": "integer" },
+          "event_id": { "type": "string" }
+        }
+      }
+    }
+  }
+}
