@@ -1,16 +1,65 @@
 # Nexus-Router Adapter Specification
 
-Version: 1.0 (nexus-router v0.8+)
+Version: 1.0 (nexus-router v1.0+)
 
 ## Overview
 
 This document defines the contract for nexus-router adapter packages. Adapters are external packages that provide dispatch implementations for tool execution.
 
+## Getting Started
+
+### Quick Export (Recommended)
+
+Use the export script to create a new adapter in seconds:
+
+```bash
+cd /path/to/nexus-router
+python scripts/export_adapter_template.py my-adapter --kind redis --org my-github-org
+
+# Output: ./nexus-router-adapter-redis/ with all placeholders replaced
+```
+
+The script:
+- Copies the template to a new directory
+- Renames packages/modules (e.g., `nexus_router_adapter_example` → `nexus_router_adapter_redis`)
+- Rewrites placeholders in all files
+- Prints next steps
+
+### Download Template Only
+
+If you don't have nexus-router cloned locally, use sparse-checkout:
+
+```bash
+git clone --filter=blob:none --no-checkout https://github.com/mcp-tool-shop/nexus-router.git
+cd nexus-router
+git sparse-checkout set templates/adapter-template
+git checkout
+
+# Copy to your project
+cp -r templates/adapter-template ../my-adapter
+```
+
+Or download as a zip from GitHub:
+- Navigate to `templates/adapter-template/` on GitHub
+- Click "Download ZIP" (or use the "Code" button on the repo and extract just that folder)
+
+### Tokens to Replace
+
+When manually copying the template, search and replace these tokens:
+
+| Token | Replace With | Example |
+|-------|--------------|---------|
+| `{kind}` | Your adapter kind (lowercase) | `redis` |
+| `{Kind}` | Your adapter kind (TitleCase) | `Redis` |
+| `nexus_router_adapter_example` | Your package name | `nexus_router_adapter_redis` |
+| `ExampleAdapter` | Your class name | `RedisAdapter` |
+| `YOUR-ORG` | Your GitHub org | `acme-corp` |
+
 ## Stability Guarantees
 
 ### Spec Stability
 
-The following are **stable within major version 0.x** (additive changes only):
+The following are **stable within v1.x** (additive changes only):
 
 1. **Factory signature**: `create_adapter(*, adapter_id: str | None = None, **config) -> DispatchAdapter`
 2. **Required protocol fields**: `adapter_id`, `adapter_kind`, `capabilities`, `call()`
@@ -22,7 +71,7 @@ Breaking changes will only occur in major version bumps.
 
 **Capabilities are core-defined.** Adapters MUST NOT invent new capabilities.
 
-Current standard capabilities (nexus-router v0.8):
+Current standard capabilities (nexus-router v1.0):
 - `dry_run`, `apply`, `timeout`, `external`
 
 To propose a new capability, open an issue on the nexus-router repository.
@@ -39,7 +88,7 @@ Adapters MUST map failures to the correct exception type:
 
 ### Validation Check IDs
 
-The `validate_adapter()` tool returns checks with stable IDs. **Check IDs are stable within 0.x** - they may be added but never renamed or removed.
+The `validate_adapter()` tool returns checks with stable IDs. **Check IDs are stable within v1.x** - they may be added but never renamed or removed.
 
 | Check ID | Purpose |
 |----------|---------|
@@ -100,7 +149,7 @@ ADAPTER_MANIFEST = {
     "schema_version": 1,
     "kind": "http",
     "capabilities": ["apply", "timeout", "external"],
-    "supported_router_versions": ">=0.9,<1.0",
+    "supported_router_versions": ">=1.0,<2.0",
     "config_schema": {
         "base_url": {
             "type": "string",
@@ -441,7 +490,7 @@ Adapter packages SHOULD:
 ```toml
 [project]
 dependencies = [
-    "nexus-router>=0.9.0,<1.0",
+    "nexus-router>=1.0,<2.0",
 ]
 ```
 
@@ -452,7 +501,7 @@ dependencies = [
 name = "nexus-router-adapter-{kind}"
 version = "0.1.0"
 dependencies = [
-    "nexus-router>=0.9.0,<1.0",
+    "nexus-router>=1.0,<2.0",
 ]
 
 [project.optional-dependencies]

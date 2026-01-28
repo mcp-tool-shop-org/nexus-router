@@ -22,7 +22,7 @@ classifiers = [
 ]
 requires-python = ">=3.9"
 dependencies = [
-    "nexus-router>=0.12.0,<1.0",
+    "nexus-router>=1.0,<2.0",
     # Add your adapter-specific dependencies here
 ]
 

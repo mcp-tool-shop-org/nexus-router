@@ -30,7 +30,7 @@ ADAPTER_MANIFEST = {
     "schema_version": 1,
     "kind": "example",  # TODO: Must match ADAPTER_KIND
     "capabilities": ["apply"],  # TODO: Must match DEFAULT_CAPABILITIES
-    "supported_router_versions": ">=0.12,<1.0",
+    "supported_router_versions": ">=1.0,<2.0",
     "config_schema": {
         "adapter_id": {
             "type": "string",

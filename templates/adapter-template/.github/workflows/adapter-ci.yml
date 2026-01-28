@@ -41,7 +41,7 @@ jobs:
           python -m pip install -U pip
           # Try [dev] extras first, fall back to plain install
           pip install -e ".[dev]" || pip install -e .
-          pip install "nexus-router>=0.10,<1.0"
+          pip install "nexus-router>=1.0,<2.0"
 
       - name: Lint (ruff)
         run: |
