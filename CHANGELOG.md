@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-01-27
+
+### Added
+
+- **strict_stderr mode**: Treat non-empty stderr on success as failure
+  - `strict_stderr: bool = False` parameter on `SubprocessAdapter`
+  - When True, raises `STDERR_ON_SUCCESS` error if stderr.strip() is non-empty
+  - Check happens AFTER successful JSON parse (malformed JSON errors take priority)
+  - Whitespace-only stderr is OK (uses strip())
+- **args_digest in all errors**: SHA256 digest (12 hex chars) of canonical args JSON
+  - Enables log correlation without storing sensitive args
+  - Included in all `NexusOperationalError.details`
+- **Enhanced timeout details**:
+  - `cmd_first_token`: First token of command (e.g., "python")
+  - `cwd`: Working directory (if set)
+  - `stdout_excerpt` / `stderr_excerpt`: Partial output if any captured
+- **Enhanced JSON error details**:
+  - `stdout_len`: Total length of output
+  - `json_error`: Exception message
+  - `stdout_head` / `stdout_tail`: First 500 and last 200 chars for large output
+- **Helper methods**:
+  - `_compute_args_digest()`: SHA256 of canonical args
+  - `_excerpt_head_tail()`: Extract head/tail from long text
+
+### Changed
+
+- All operational errors now include `args_digest` in details
+- Timeout errors now include command context (`cmd_first_token`, optional `cwd`)
+- Invalid JSON errors now include structured details (`stdout_len`, `json_error`, `stdout_head`)
+
+### Notes
+
+- Default behavior unchanged when `strict_stderr=False`
+- 19 new tests (126 total passing)
+- No schema changes
+
 ## [0.5.1] - 2026-01-27
 
 ### Added

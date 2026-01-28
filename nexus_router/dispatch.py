@@ -266,6 +266,11 @@ class SubprocessAdapter:
     - Separate stdout/stderr capture limits
     - Temp file permissions (0o600 on POSIX)
     - Cleanup retry with diagnostic tracking
+
+    Hardening features (v0.5.2+):
+    - strict_stderr mode: treat any stderr on success as failure
+    - args_digest in all error details for correlation
+    - Enhanced timeout/JSON error details
     """
 
     # Callable type aliases for redaction hooks
@@ -285,6 +290,7 @@ class SubprocessAdapter:
         redact_args: Optional[RedactArgsFunc] = None,
         redact_text: Optional[RedactTextFunc] = None,
         cleanup_retry_delay_s: float = 0.1,
+        strict_stderr: bool = False,
     ) -> None:
         """
         Initialize SubprocessAdapter.
@@ -302,6 +308,8 @@ class SubprocessAdapter:
             redact_text: Function to redact sensitive text in output/errors.
                         If None, uses default_redact_text. Pass lambda x: x to disable.
             cleanup_retry_delay_s: Delay before retry if temp file cleanup fails.
+            strict_stderr: If True, treat non-empty stderr on success as failure.
+                          Default False (ignore stderr on success).
         """
         if not base_cmd:
             raise ValueError("base_cmd must not be empty")
@@ -313,6 +321,7 @@ class SubprocessAdapter:
         self._max_stdout_chars = max_stdout_chars
         self._max_stderr_chars = max_stderr_chars
         self._cleanup_retry_delay_s = cleanup_retry_delay_s
+        self._strict_stderr = strict_stderr
 
         # Redaction hooks (default to built-in redactors)
         self._redact_args: SubprocessAdapter.RedactArgsFunc = (
@@ -376,6 +385,12 @@ class SubprocessAdapter:
         }
         payload_json = json.dumps(payload, sort_keys=True, separators=(",", ":"))
 
+        # Compute args_digest for correlation (non-sensitive)
+        args_digest = self._compute_args_digest(args)
+
+        # Common error details (added to all errors)
+        base_details = self._base_error_details(args_digest)
+
         # Write payload to temp file
         args_file_path: Optional[str] = None
         try:
@@ -416,20 +431,45 @@ class SubprocessAdapter:
                     shell=False,
                 )
             except subprocess.TimeoutExpired as e:
+                # Enhanced timeout details
+                details = {
+                    **base_details,
+                    "timeout_s": self._timeout_s,
+                    "cmd_first_token": os.path.basename(self._base_cmd[0]),
+                }
+                if self._cwd:
+                    details["cwd"] = self._cwd
+                # Capture any partial output (may be None or bytes)
+                if e.stdout is not None:
+                    stdout_str = e.stdout if isinstance(e.stdout, str) else e.stdout.decode(
+                        "utf-8", errors="replace"
+                    )
+                    details["stdout_excerpt"] = self._redact_text(
+                        self._truncate_stdout(stdout_str)
+                    )
+                if e.stderr is not None:
+                    stderr_str = e.stderr if isinstance(e.stderr, str) else e.stderr.decode(
+                        "utf-8", errors="replace"
+                    )
+                    details["stderr_excerpt"] = self._redact_text(
+                        self._truncate_stderr(stderr_str)
+                    )
                 raise NexusOperationalError(
                     f"Command timed out after {self._timeout_s}s",
                     error_code="TIMEOUT",
-                    details={"timeout_s": self._timeout_s},
+                    details=details,
                 ) from e
             except FileNotFoundError as e:
                 raise NexusOperationalError(
                     f"Command not found: {self._base_cmd[0]}",
                     error_code="COMMAND_NOT_FOUND",
+                    details=base_details,
                 ) from e
             except PermissionError as e:
                 raise NexusOperationalError(
                     f"Permission denied executing command: {self._base_cmd[0]}",
                     error_code="PERMISSION_DENIED",
+                    details=base_details,
                 ) from e
             except OSError as e:
                 # Map specific errno values
@@ -437,10 +477,12 @@ class SubprocessAdapter:
                     raise NexusOperationalError(
                         f"Permission denied: {e}",
                         error_code="PERMISSION_DENIED",
+                        details=base_details,
                     ) from e
                 raise NexusOperationalError(
                     f"OS error executing command: {e}",
                     error_code="OS_ERROR",
+                    details=base_details,
                 ) from e
 
             # Check exit code
@@ -450,6 +492,7 @@ class SubprocessAdapter:
                     f"Command exited with code {result.returncode}",
                     error_code="NONZERO_EXIT",
                     details={
+                        **base_details,
                         "returncode": result.returncode,
                         "stderr_excerpt": self._redact_text(stderr_excerpt),
                     },
@@ -459,18 +502,41 @@ class SubprocessAdapter:
             try:
                 output = json.loads(result.stdout)
             except json.JSONDecodeError as e:
-                # Include first/last chars for debugging
-                stdout_excerpt = self._excerpt_for_json_error(result.stdout)
+                # Enhanced JSON error details with head/tail/len
+                stdout_len = len(result.stdout)
+                details = {
+                    **base_details,
+                    "stdout_len": stdout_len,
+                    "json_error": str(e),
+                }
+                # Add head/tail excerpts
+                head, tail = self._excerpt_head_tail(result.stdout)
+                details["stdout_head"] = self._redact_text(head)
+                if tail:
+                    details["stdout_tail"] = self._redact_text(tail)
                 raise NexusOperationalError(
                     f"Invalid JSON output: {e}",
                     error_code="INVALID_JSON_OUTPUT",
-                    details={"stdout_excerpt": self._redact_text(stdout_excerpt)},
+                    details=details,
                 ) from e
 
             if not isinstance(output, dict):
                 raise NexusOperationalError(
                     f"Output is not a JSON object: {type(output).__name__}",
                     error_code="INVALID_JSON_OUTPUT",
+                    details=base_details,
+                )
+
+            # Check strict_stderr AFTER successful JSON parse
+            if self._strict_stderr and result.stderr.strip():
+                stderr_excerpt = self._truncate_stderr(result.stderr)
+                raise NexusOperationalError(
+                    "Command produced stderr output (strict_stderr mode)",
+                    error_code="STDERR_ON_SUCCESS",
+                    details={
+                        **base_details,
+                        "stderr_excerpt": self._redact_text(stderr_excerpt),
+                    },
                 )
 
             return output
@@ -479,6 +545,15 @@ class SubprocessAdapter:
             # Clean up temp file with retry
             if args_file_path is not None:
                 self._cleanup_temp_file(args_file_path)
+
+    def _compute_args_digest(self, args: Dict[str, Any]) -> str:
+        """Compute SHA256 digest of canonical args JSON (first 12 hex chars)."""
+        canonical = json.dumps(args, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(canonical.encode()).hexdigest()[:12]
+
+    def _base_error_details(self, args_digest: str) -> Dict[str, Any]:
+        """Build common error details included in all operational errors."""
+        return {"args_digest": args_digest}
 
     def _secure_temp_file(self, path: str) -> None:
         """Set restrictive permissions on temp file (POSIX only, best-effort)."""
@@ -544,7 +619,21 @@ class SubprocessAdapter:
         Create excerpt showing first and last chars for JSON parse error debugging.
 
         For large invalid JSON output, shows head...tail for context.
+        Deprecated in v0.5.2 - use _excerpt_head_tail instead.
         """
         if len(text) <= head + tail + 20:
             return text
         return f"{text[:head]}... [{len(text) - head - tail} chars] ...{text[-tail:]}"
+
+    def _excerpt_head_tail(
+        self, text: str, head: int = 500, tail: int = 200
+    ) -> Tuple[str, Optional[str]]:
+        """
+        Extract head and tail excerpts from text.
+
+        Returns:
+            (head_excerpt, tail_excerpt) where tail_excerpt is None if text is short.
+        """
+        if len(text) <= head + tail:
+            return (text, None)
+        return (text[:head], text[-tail:])

@@ -658,3 +658,252 @@ class TestJsonExcerptForErrors:
         assert excerpt.startswith("A" * 200)
         assert excerpt.endswith("C" * 100)
         assert "chars]" in excerpt  # Shows count of skipped chars
+
+
+# =============================================================================
+# v0.5.2 Tests
+# =============================================================================
+
+
+class TestStrictStderr:
+    """Tests for strict_stderr mode (v0.5.2)."""
+
+    def test_strict_stderr_off_ignores_stderr(self) -> None:
+        """With strict_stderr=False (default), stderr is ignored on success."""
+        adapter = SubprocessAdapter(
+            [sys.executable, str(ECHO_TOOL)],
+            adapter_id="echo-default",
+            strict_stderr=False,
+        )
+        result = adapter.call(
+            "tool", "method", {"simulate_stderr": "Warning: something"}
+        )
+        assert result["success"] is True
+
+    def test_strict_stderr_on_raises_on_stderr(self) -> None:
+        """With strict_stderr=True, non-empty stderr on success raises error."""
+        adapter = SubprocessAdapter(
+            [sys.executable, str(ECHO_TOOL)],
+            adapter_id="echo-strict",
+            strict_stderr=True,
+        )
+        with pytest.raises(NexusOperationalError) as exc_info:
+            adapter.call("tool", "method", {"simulate_stderr": "Warning!"})
+
+        assert exc_info.value.error_code == "STDERR_ON_SUCCESS"
+        assert "stderr_excerpt" in exc_info.value.details
+        assert "args_digest" in exc_info.value.details
+
+    def test_strict_stderr_on_allows_empty_stderr(self) -> None:
+        """With strict_stderr=True, empty stderr is OK."""
+        adapter = SubprocessAdapter(
+            [sys.executable, str(ECHO_TOOL)],
+            adapter_id="echo-strict",
+            strict_stderr=True,
+        )
+        result = adapter.call("tool", "method", {})
+        assert result["success"] is True
+
+    def test_strict_stderr_whitespace_only_is_ok(self) -> None:
+        """With strict_stderr=True, whitespace-only stderr is OK."""
+        adapter = SubprocessAdapter(
+            [sys.executable, str(ECHO_TOOL)],
+            adapter_id="echo-strict",
+            strict_stderr=True,
+        )
+        # Simulate stderr with only whitespace
+        result = adapter.call("tool", "method", {"simulate_stderr": "   \n  "})
+        # Should succeed because strip() makes it empty
+        assert result["success"] is True
+
+    def test_strict_stderr_after_json_parse(self) -> None:
+        """strict_stderr check happens after JSON parse succeeds."""
+        adapter = SubprocessAdapter(
+            [sys.executable, str(ECHO_TOOL)],
+            adapter_id="echo-strict",
+            strict_stderr=True,
+        )
+        # Invalid JSON should raise INVALID_JSON_OUTPUT, not STDERR_ON_SUCCESS
+        with pytest.raises(NexusOperationalError) as exc_info:
+            adapter.call("tool", "method", {"simulate_invalid_json": True})
+
+        assert exc_info.value.error_code == "INVALID_JSON_OUTPUT"
+
+
+class TestArgsDigest:
+    """Tests for args_digest in error details (v0.5.2)."""
+
+    def test_args_digest_in_timeout(self) -> None:
+        """TIMEOUT error includes args_digest."""
+        adapter = SubprocessAdapter(
+            [sys.executable, str(ECHO_TOOL)],
+            adapter_id="echo-timeout",
+            timeout_s=0.5,
+        )
+        with pytest.raises(NexusOperationalError) as exc_info:
+            adapter.call("tool", "method", {"simulate_timeout": True})
+
+        assert exc_info.value.error_code == "TIMEOUT"
+        assert "args_digest" in exc_info.value.details
+        assert len(exc_info.value.details["args_digest"]) == 12  # 12 hex chars
+
+    def test_args_digest_in_nonzero_exit(self) -> None:
+        """NONZERO_EXIT error includes args_digest."""
+        adapter = SubprocessAdapter(
+            [sys.executable, str(ECHO_TOOL)],
+            adapter_id="echo-exit",
+        )
+        with pytest.raises(NexusOperationalError) as exc_info:
+            adapter.call("tool", "method", {"simulate_exit_code": 1})
+
+        assert exc_info.value.error_code == "NONZERO_EXIT"
+        assert "args_digest" in exc_info.value.details
+
+    def test_args_digest_in_invalid_json(self) -> None:
+        """INVALID_JSON_OUTPUT error includes args_digest."""
+        adapter = SubprocessAdapter(
+            [sys.executable, str(ECHO_TOOL)],
+            adapter_id="echo-json",
+        )
+        with pytest.raises(NexusOperationalError) as exc_info:
+            adapter.call("tool", "method", {"simulate_invalid_json": True})
+
+        assert exc_info.value.error_code == "INVALID_JSON_OUTPUT"
+        assert "args_digest" in exc_info.value.details
+
+    def test_args_digest_in_command_not_found(self) -> None:
+        """COMMAND_NOT_FOUND error includes args_digest."""
+        adapter = SubprocessAdapter(
+            ["nonexistent_cmd_12345"],
+            adapter_id="missing",
+        )
+        with pytest.raises(NexusOperationalError) as exc_info:
+            adapter.call("tool", "method", {"key": "value"})
+
+        assert exc_info.value.error_code == "COMMAND_NOT_FOUND"
+        assert "args_digest" in exc_info.value.details
+
+    def test_args_digest_is_deterministic(self) -> None:
+        """Same args produce same digest."""
+        adapter = SubprocessAdapter(
+            [sys.executable, str(ECHO_TOOL)],
+            adapter_id="echo-digest",
+        )
+        args = {"a": 1, "b": [2, 3], "c": {"nested": True}}
+        digest1 = adapter._compute_args_digest(args)
+        digest2 = adapter._compute_args_digest(args)
+        assert digest1 == digest2
+
+    def test_args_digest_differs_for_different_args(self) -> None:
+        """Different args produce different digest."""
+        adapter = SubprocessAdapter(
+            [sys.executable, str(ECHO_TOOL)],
+            adapter_id="echo-digest",
+        )
+        digest1 = adapter._compute_args_digest({"a": 1})
+        digest2 = adapter._compute_args_digest({"a": 2})
+        assert digest1 != digest2
+
+
+class TestEnhancedTimeoutDetails:
+    """Tests for enhanced timeout error details (v0.5.2)."""
+
+    def test_timeout_includes_cmd_first_token(self) -> None:
+        """TIMEOUT includes cmd_first_token."""
+        adapter = SubprocessAdapter(
+            [sys.executable, str(ECHO_TOOL)],
+            adapter_id="echo-timeout",
+            timeout_s=0.5,
+        )
+        with pytest.raises(NexusOperationalError) as exc_info:
+            adapter.call("tool", "method", {"simulate_timeout": True})
+
+        details = exc_info.value.details
+        assert "cmd_first_token" in details
+        assert "python" in details["cmd_first_token"].lower()
+
+    def test_timeout_includes_cwd_if_set(self, tmp_path: Path) -> None:
+        """TIMEOUT includes cwd when specified."""
+        adapter = SubprocessAdapter(
+            [sys.executable, str(ECHO_TOOL)],
+            adapter_id="echo-timeout",
+            timeout_s=0.5,
+            cwd=str(tmp_path),
+        )
+        with pytest.raises(NexusOperationalError) as exc_info:
+            adapter.call("tool", "method", {"simulate_timeout": True})
+
+        assert "cwd" in exc_info.value.details
+        assert exc_info.value.details["cwd"] == str(tmp_path)
+
+    def test_timeout_excludes_cwd_if_not_set(self) -> None:
+        """TIMEOUT omits cwd when not specified."""
+        adapter = SubprocessAdapter(
+            [sys.executable, str(ECHO_TOOL)],
+            adapter_id="echo-timeout",
+            timeout_s=0.5,
+        )
+        with pytest.raises(NexusOperationalError) as exc_info:
+            adapter.call("tool", "method", {"simulate_timeout": True})
+
+        assert "cwd" not in exc_info.value.details
+
+
+class TestEnhancedJsonErrorDetails:
+    """Tests for enhanced JSON error details (v0.5.2)."""
+
+    def test_invalid_json_includes_stdout_len(self) -> None:
+        """INVALID_JSON_OUTPUT includes stdout_len."""
+        adapter = SubprocessAdapter(
+            [sys.executable, str(ECHO_TOOL)],
+            adapter_id="echo-json",
+        )
+        with pytest.raises(NexusOperationalError) as exc_info:
+            adapter.call("tool", "method", {"simulate_invalid_json": True})
+
+        assert "stdout_len" in exc_info.value.details
+        assert isinstance(exc_info.value.details["stdout_len"], int)
+
+    def test_invalid_json_includes_json_error(self) -> None:
+        """INVALID_JSON_OUTPUT includes json_error message."""
+        adapter = SubprocessAdapter(
+            [sys.executable, str(ECHO_TOOL)],
+            adapter_id="echo-json",
+        )
+        with pytest.raises(NexusOperationalError) as exc_info:
+            adapter.call("tool", "method", {"simulate_invalid_json": True})
+
+        assert "json_error" in exc_info.value.details
+        assert isinstance(exc_info.value.details["json_error"], str)
+
+    def test_invalid_json_includes_stdout_head(self) -> None:
+        """INVALID_JSON_OUTPUT includes stdout_head."""
+        adapter = SubprocessAdapter(
+            [sys.executable, str(ECHO_TOOL)],
+            adapter_id="echo-json",
+        )
+        with pytest.raises(NexusOperationalError) as exc_info:
+            adapter.call("tool", "method", {"simulate_invalid_json": True})
+
+        assert "stdout_head" in exc_info.value.details
+
+    def test_excerpt_head_tail_short_text(self) -> None:
+        """Short text returns (text, None)."""
+        adapter = SubprocessAdapter(
+            [sys.executable, str(ECHO_TOOL)],
+            adapter_id="echo-excerpt",
+        )
+        head, tail = adapter._excerpt_head_tail("short text")
+        assert head == "short text"
+        assert tail is None
+
+    def test_excerpt_head_tail_long_text(self) -> None:
+        """Long text returns (head, tail)."""
+        adapter = SubprocessAdapter(
+            [sys.executable, str(ECHO_TOOL)],
+            adapter_id="echo-excerpt",
+        )
+        long_text = "A" * 500 + "B" * 1000 + "C" * 200
+        head, tail = adapter._excerpt_head_tail(long_text, head=500, tail=200)
+        assert head == "A" * 500
+        assert tail == "C" * 200
