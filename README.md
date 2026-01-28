@@ -77,9 +77,53 @@ print(result["ok"])          # True if no violations
 print(result["violations"])  # [] or list of issues
 ```
 
+## Dispatch Adapters (v0.4+)
+
+Adapters execute tool calls. Pass an adapter to `run()`:
+
+```python
+from nexus_router.tool import run
+from nexus_router.dispatch import SubprocessAdapter
+
+# Create adapter for external command
+adapter = SubprocessAdapter(
+    ["python", "-m", "my_tool_cli"],
+    timeout_s=30.0,
+)
+
+resp = run({
+    "goal": "execute real tool",
+    "mode": "apply",
+    "policy": {"allow_apply": True},
+    "plan_override": [
+        {"step_id": "s1", "intent": "do something", "call": {"tool": "my-tool", "method": "action", "args": {"x": 1}}}
+    ]
+}, adapter=adapter)
+```
+
+### SubprocessAdapter
+
+Calls external commands with this contract:
+
+```bash
+<base_cmd> call <tool> <method> --json-args-file <path>
+```
+
+The external command must:
+- Read JSON payload from the args file: `{"tool": "...", "method": "...", "args": {...}}`
+- Print JSON result to stdout on success
+- Exit with code 0 on success, non-zero on failure
+
+Error codes: `TIMEOUT`, `NONZERO_EXIT`, `INVALID_JSON_OUTPUT`, `COMMAND_NOT_FOUND`
+
+### Built-in adapters
+
+- `NullAdapter`: Returns simulated output (default, used in `dry_run`)
+- `FakeAdapter`: Configurable responses for testing
+
 ## What this version is (and isn't)
 
-v0.3.0 is a correct, minimal event-sourced router core with full portability:
+v0.5.0 is a production-ready event-sourced router with real tool dispatch:
 
 - Event log with monotonic sequencing
 - Policy gating (`allow_apply`, `max_steps`)
@@ -88,8 +132,8 @@ v0.3.0 is a correct, minimal event-sourced router core with full portability:
 - Export/import with integrity verification
 - Replay with invariant checking
 - Fixture-driven planning (`plan_override`)
-
-It does not dispatch real tools yet (that's planned for v0.4+).
+- **SubprocessAdapter for external tool execution**
+- Error taxonomy: operational vs bug errors
 
 ## Concurrency
 

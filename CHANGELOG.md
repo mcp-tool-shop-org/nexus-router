@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-01-27
+
+### Added
+
+- **SubprocessAdapter**: Execute tool calls via external commands
+  - Invokes `<base_cmd> call <tool> <method> --json-args-file <path>`
+  - Payload passed via temp file (avoids Windows command-line length limits)
+  - Parses JSON output from stdout on success
+  - Timeout enforcement with configurable `timeout_s`
+  - Error codes: `TIMEOUT`, `NONZERO_EXIT`, `INVALID_JSON_OUTPUT`, `COMMAND_NOT_FOUND`
+  - Stable `adapter_id` derived from `base_cmd` hash (or user-provided)
+  - All failures mapped to `NexusOperationalError` (graceful degradation)
+- **Test fixture**: `tests/fixtures/echo_tool.py` for deterministic subprocess testing
+  - Simulates success, timeout, exit codes, and invalid JSON output
+
+### Changed
+
+- Version bumped to 0.5.0
+
+### Notes
+
+- SubprocessAdapter never raises `NexusBugError` - all subprocess failures are operational
+- Temp files cleaned up in `finally` block (Windows-safe)
+- `max_capture_chars` only affects event diagnostics, not JSON parsing
+- External command contract: print JSON to stdout, exit 0 on success
+
 ## [0.4.0] - 2026-01-27
 
 ### Added
