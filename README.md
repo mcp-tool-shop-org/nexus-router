@@ -1,3 +1,8 @@
+> ⚠️ **This repository has moved to [nexus-suite](https://github.com/mcp-tool-shop/nexus-suite)**
+> Source now lives at: `src/nexus-router/`
+
+---
+
 # nexus-router
 
 Event-sourced MCP router with provenance + integrity.
