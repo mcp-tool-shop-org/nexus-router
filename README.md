@@ -1,13 +1,21 @@
-> ⚠️ **This repository has moved to [nexus-suite](https://github.com/mcp-tool-shop/nexus-suite)**
-> Source now lives at: `src/nexus-router/`
+<p align="center">
+  <img src="logo.png" alt="nexus-router logo" width="120" />
+</p>
+
+<h1 align="center">nexus-router</h1>
+
+<p align="center">
+  Event-sourced MCP router with provenance + integrity.
+</p>
+
+<p align="center">
+  <a href="https://github.com/mcp-tool-shop-org/nexus-router/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/nexus-router/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://pypi.org/project/nexus-router/"><img src="https://img.shields.io/pypi/v/nexus-router" alt="PyPI" /></a>
+  <a href="https://github.com/mcp-tool-shop-org/nexus-router/blob/main/LICENSE"><img src="https://img.shields.io/github/license/mcp-tool-shop-org/nexus-router" alt="License: MIT" /></a>
+  <a href="https://pypi.org/project/nexus-router/"><img src="https://img.shields.io/pypi/pyversions/nexus-router" alt="Python versions" /></a>
+</p>
 
 ---
-
-# nexus-router
-
-Event-sourced MCP router with provenance + integrity.
-
-[![CI](https://github.com/mcp-tool-shop/nexus-router/actions/workflows/ci.yml/badge.svg)](https://github.com/mcp-tool-shop/nexus-router/actions/workflows/ci.yml)
 
 ## Platform Philosophy
 
@@ -20,17 +28,27 @@ Event-sourced MCP router with provenance + integrity.
 
 ## Brand + Tool ID
 
-- Brand/repo: `nexus-router`
-- Python package: `nexus_router`
-- MCP tool ID: `nexus-router.run`
+| Key | Value |
+|-----|-------|
+| Brand / repo | `nexus-router` |
+| Python package | `nexus_router` |
+| MCP tool ID | `nexus-router.run` |
+| Author | [mcp-tool-shop](https://github.com/mcp-tool-shop) |
+| License | MIT |
 
-## Install (dev)
+## Install
 
 ```bash
-pip install -e .
+pip install nexus-router
 ```
 
-## Quick example
+For development:
+
+```bash
+pip install -e ".[dev]"
+```
+
+## Quick Example
 
 ```python
 from nexus_router.tool import run
@@ -132,12 +150,12 @@ The external command must:
 
 Error codes: `TIMEOUT`, `NONZERO_EXIT`, `INVALID_JSON_OUTPUT`, `COMMAND_NOT_FOUND`
 
-### Built-in adapters
+### Built-in Adapters
 
 - `NullAdapter`: Returns simulated output (default, used in `dry_run`)
 - `FakeAdapter`: Configurable responses for testing
 
-## What this version is (and isn't)
+## What This Version Is (and Isn't)
 
 v1.0 is a **platform-grade** event-sourced router with a complete adapter ecosystem:
 
@@ -170,14 +188,14 @@ Create custom adapters to dispatch tool calls to any backend.
 
 | Adapter | Description | Install |
 |---------|-------------|---------|
-| [nexus-router-adapter-http](https://github.com/mcp-tool-shop/nexus-router-adapter-http) | HTTP/REST dispatch | `pip install nexus-router-adapter-http` |
-| [nexus-router-adapter-stdout](https://github.com/mcp-tool-shop/nexus-router-adapter-stdout) | Debug logging | `pip install nexus-router-adapter-stdout` |
+| [nexus-router-adapter-http](https://github.com/mcp-tool-shop-org/nexus-router-adapter-http) | HTTP/REST dispatch | `pip install nexus-router-adapter-http` |
+| [nexus-router-adapter-stdout](https://github.com/mcp-tool-shop-org/nexus-router-adapter-stdout) | Debug logging | `pip install nexus-router-adapter-stdout` |
 
 See [ADAPTERS.generated.md](ADAPTERS.generated.md) for full documentation.
 
 ### Creating Adapters
 
-Use the [adapter template](https://github.com/mcp-tool-shop/nexus-router-adapter-template) to create new adapters in 2 minutes:
+Use the [adapter template](https://github.com/mcp-tool-shop-org/nexus-router-adapter-template) to create new adapters in 2 minutes:
 
 ```bash
 # Fork the template, then:
@@ -231,3 +249,9 @@ ADAPTER_MANIFEST = {
 ```
 
 The `validate_adapter()` tool checks compatibility.
+
+---
+
+<p align="center">
+  Built by <a href="https://mcp-tool-shop.github.io/">MCP Tool Shop</a>
+</p>
