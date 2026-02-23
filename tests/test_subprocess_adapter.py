@@ -104,9 +104,7 @@ class TestSubprocessAdapterSuccess:
             adapter_id="echo-test",
         )
 
-        result = adapter.call(
-            "tool", "method", {"simulate_stderr": "Warning: something happened"}
-        )
+        result = adapter.call("tool", "method", {"simulate_stderr": "Warning: something happened"})
 
         assert result["success"] is True
         # stderr content is ignored in output
@@ -505,9 +503,7 @@ class TestErrorCodeExpansion:
             adapter_id="echo-exit",
         )
         with pytest.raises(NexusOperationalError) as exc_info:
-            adapter.call(
-                "tool", "method", {"simulate_exit_code": 1, "stderr_message": "Error!"}
-            )
+            adapter.call("tool", "method", {"simulate_exit_code": 1, "stderr_message": "Error!"})
         assert exc_info.value.error_code == "NONZERO_EXIT"
         assert "returncode" in exc_info.value.details
         assert "stderr_excerpt" in exc_info.value.details
@@ -605,12 +601,11 @@ class TestCleanupRetry:
                 raise OSError("Simulated failure")
             return original_remove(path)
 
-        with mock.patch("os.remove", side_effect=failing_remove):
-            # Need to also patch in the dispatch module
-            with mock.patch(
-                "nexus_router.dispatch.os.remove", side_effect=failing_remove
-            ):
-                adapter.call("tool", "method", {})
+        with (
+            mock.patch("os.remove", side_effect=failing_remove),
+            mock.patch("nexus_router.dispatch.os.remove", side_effect=failing_remove),
+        ):
+            adapter.call("tool", "method", {})
 
         # Should have been called twice for the temp file
         assert call_count[0] >= 2
@@ -675,9 +670,7 @@ class TestStrictStderr:
             adapter_id="echo-default",
             strict_stderr=False,
         )
-        result = adapter.call(
-            "tool", "method", {"simulate_stderr": "Warning: something"}
-        )
+        result = adapter.call("tool", "method", {"simulate_stderr": "Warning: something"})
         assert result["success"] is True
 
     def test_strict_stderr_on_raises_on_stderr(self) -> None:

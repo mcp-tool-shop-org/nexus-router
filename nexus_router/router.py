@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from . import events as E
 from .dispatch import (
@@ -16,15 +16,15 @@ from .policy import gate_apply
 from .provenance import build_provenance_bundle
 
 
-def create_plan(request: Dict[str, Any]) -> List[Dict[str, Any]]:
+def create_plan(request: dict[str, Any]) -> list[dict[str, Any]]:
     # v0.1: fixture-driven planner
-    plan: List[Dict[str, Any]] = request.get("plan_override", [])
+    plan: list[dict[str, Any]] = request.get("plan_override", [])
     return plan
 
 
-def _unique_in_order(items: List[str]) -> List[str]:
+def _unique_in_order(items: list[str]) -> list[str]:
     seen = set()
-    out: List[str] = []
+    out: list[str] = []
     for x in items:
         if x not in seen:
             seen.add(x)
@@ -36,8 +36,8 @@ class Router:
     def __init__(
         self,
         store: EventStore,
-        adapter: Optional[DispatchAdapter] = None,
-        adapters: Optional[AdapterRegistry] = None,
+        adapter: DispatchAdapter | None = None,
+        adapters: AdapterRegistry | None = None,
     ) -> None:
         """
         Initialize router with event store and adapter configuration.
@@ -79,7 +79,7 @@ class Router:
         # Default adapter (may be overridden by request dispatch)
         self.adapter: DispatchAdapter = self._registry.get_default()
 
-    def run(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def run(self, request: dict[str, Any]) -> dict[str, Any]:
         mode = request.get("mode", "dry_run")
         goal = request["goal"]
         policy = request.get("policy", {})
@@ -140,8 +140,8 @@ class Router:
                 self.store.set_run_status(run_id, "FAILED")
                 plan = plan[:max_steps_i]
 
-        tools_used: List[str] = []
-        results: List[Dict[str, Any]] = []
+        tools_used: list[str] = []
+        results: list[dict[str, Any]] = []
 
         for step in plan:
             step_id = step["step_id"]
@@ -293,9 +293,7 @@ class Router:
         tools_used_u = _unique_in_order(tools_used)
         events_committed = len(self.store.read_events(run_id))
 
-        applied_count = (
-            0 if mode == "dry_run" else sum(1 for r in results if r["status"] == "ok")
-        )
+        applied_count = 0 if mode == "dry_run" else sum(1 for r in results if r["status"] == "ok")
         skipped_count = sum(1 for r in results if r["status"] != "ok")
 
         return {
@@ -319,9 +317,7 @@ class Router:
             "provenance": prov_bundle.get("provenance", {"artifacts": [], "records": []}),
         }
 
-    def _select_adapter(
-        self, dispatch_config: Dict[str, Any]
-    ) -> tuple[DispatchAdapter, str]:
+    def _select_adapter(self, dispatch_config: dict[str, Any]) -> tuple[DispatchAdapter, str]:
         """
         Select adapter based on dispatch configuration.
 
@@ -342,7 +338,7 @@ class Router:
             # Request explicitly selected an adapter
             try:
                 adapter = self._registry.get(adapter_id)
-            except KeyError:
+            except KeyError as e:
                 raise NexusOperationalError(
                     f"Unknown adapter: '{adapter_id}'",
                     error_code="UNKNOWN_ADAPTER",
@@ -350,7 +346,7 @@ class Router:
                         "requested_adapter_id": adapter_id,
                         "available_adapters": self._registry.list_ids(),
                     },
-                )
+                ) from e
             selection_source = "request"
         else:
             # Use default
@@ -379,7 +375,7 @@ class Router:
         mode: str,
         error_code: str,
         error_message: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Build a response for a run that failed before execution."""
         events_committed = len(self.store.read_events(run_id))
         return {
@@ -411,11 +407,11 @@ class Router:
         self,
         *,
         mode: str,
-        policy: Dict[str, Any],
+        policy: dict[str, Any],
         tool: str,
         method: str,
-        args: Dict[str, Any],
-    ) -> tuple[Dict[str, Any], bool, int]:
+        args: dict[str, Any],
+    ) -> tuple[dict[str, Any], bool, int]:
         """
         Dispatch a tool call based on mode.
 
@@ -427,7 +423,7 @@ class Router:
         """
         if mode == "dry_run":
             # dry_run: never call adapter, return simulated output
-            output: Dict[str, Any] = {
+            output: dict[str, Any] = {
                 "simulated": True,
                 "adapter_id": self.adapter.adapter_id,
                 "tool": tool,

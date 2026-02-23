@@ -17,12 +17,9 @@ This script:
 from __future__ import annotations
 
 import argparse
-import os
-import re
 import shutil
 import sys
 from pathlib import Path
-
 
 # Files to skip during copy
 SKIP_PATTERNS = [
@@ -93,14 +90,15 @@ def export_template(
     # Derived names
     pkg_name = to_package_name(kind)  # e.g., "redis" or "my_adapter"
     proj_name = to_project_name(kind)  # e.g., "redis" or "my-adapter"
-    class_name = "".join(word.title() for word in kind.replace("-", "_").split("_"))  # e.g., "Redis"
+    # e.g., "Redis"
+    class_name = "".join(word.title() for word in kind.replace("-", "_").split("_"))
 
     # Check output doesn't exist
     if output_dir.exists():
         print(f"Error: Output directory already exists: {output_dir}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Exporting adapter template...")
+    print("Exporting adapter template...")
     print(f"  Kind: {kind}")
     print(f"  Package: nexus_router_adapter_{pkg_name}")
     print(f"  Project: nexus-router-adapter-{proj_name}")

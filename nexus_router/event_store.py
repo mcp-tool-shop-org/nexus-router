@@ -4,7 +4,7 @@ import json
 import sqlite3
 import uuid
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any
 
 SCHEMA_SQL = """
 PRAGMA journal_mode=WAL;
@@ -39,7 +39,7 @@ class EventRow:
     run_id: str
     seq: int
     type: str
-    payload: Dict[str, Any]
+    payload: dict[str, Any]
     ts: str
 
 
@@ -58,7 +58,7 @@ class EventStore:
     def close(self) -> None:
         self.conn.close()
 
-    def __enter__(self) -> "EventStore":
+    def __enter__(self) -> EventStore:
         return self
 
     def __exit__(
@@ -78,7 +78,7 @@ class EventStore:
         self.conn.commit()
         return run_id
 
-    def append(self, run_id: str, event_type: str, payload: Dict[str, Any]) -> EventRow:
+    def append(self, run_id: str, event_type: str, payload: dict[str, Any]) -> EventRow:
         with self.conn:
             (seq,) = self.conn.execute(
                 "SELECT COALESCE(MAX(seq), -1) + 1 FROM events WHERE run_id=?",
@@ -106,16 +106,14 @@ class EventStore:
             ts=ts,
         )
 
-    def read_events(self, run_id: str) -> List[EventRow]:
+    def read_events(self, run_id: str) -> list[EventRow]:
         sql = (
             "SELECT event_id, run_id, seq, type, payload_json, ts "
             "FROM events WHERE run_id=? ORDER BY seq ASC"
         )
         rows = self.conn.execute(sql, (run_id,)).fetchall()
         return [
-            EventRow(
-                event_id=eid, run_id=rid, seq=seq, type=etype, payload=json.loads(pj), ts=ts
-            )
+            EventRow(event_id=eid, run_id=rid, seq=seq, type=etype, payload=json.loads(pj), ts=ts)
             for (eid, rid, seq, etype, pj, ts) in rows
         ]
 

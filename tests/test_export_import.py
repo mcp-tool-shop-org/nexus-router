@@ -5,18 +5,18 @@ from __future__ import annotations
 import json
 from importlib import resources
 from pathlib import Path
-from typing import Any, Dict, cast
+from typing import Any, cast
 
 import jsonschema
 
 from nexus_router.tool import export, import_bundle, replay, run
 
 
-def _load_schema(name: str) -> Dict[str, Any]:
-    with resources.files("nexus_router").joinpath(f"schemas/{name}").open(
-        "r", encoding="utf-8"
-    ) as f:
-        return cast(Dict[str, Any], json.load(f))
+def _load_schema(name: str) -> dict[str, Any]:
+    with (
+        resources.files("nexus_router").joinpath(f"schemas/{name}").open("r", encoding="utf-8") as f
+    ):
+        return cast(dict[str, Any], json.load(f))
 
 
 EXPORT_REQUEST_SCHEMA = _load_schema("nexus-router.export.request.v0.3.json")
@@ -142,9 +142,7 @@ class TestExportGoldenFixtures:
         )
         run_id = resp["run"]["run_id"]
 
-        response = export(
-            {"db_path": db_path, "run_id": run_id, "include_provenance": False}
-        )
+        response = export({"db_path": db_path, "run_id": run_id, "include_provenance": False})
 
         assert response["ok"] is True
         assert "provenance" not in response["artifact"]
@@ -263,9 +261,7 @@ class TestImportGoldenFixtures:
         bundle = export_resp["artifact"]
 
         # Import with new_run_id mode
-        import_resp = import_bundle(
-            {"db_path": db_path, "bundle": bundle, "mode": "new_run_id"}
-        )
+        import_resp = import_bundle({"db_path": db_path, "bundle": bundle, "mode": "new_run_id"})
 
         assert import_resp["status"] == "ok"
         assert import_resp["imported_run_id"] != original_run_id
@@ -315,14 +311,13 @@ class TestImportGoldenFixtures:
         bundle["run"]["goal"] = "overwrite test 2"
         # Recalculate digest
         import hashlib
+
         digest_content = {"run": bundle["run"], "events": bundle["events"]}
         digest_json = json.dumps(digest_content, sort_keys=True, separators=(",", ":"))
         bundle["digests"]["sha256"] = hashlib.sha256(digest_json.encode()).hexdigest()
 
         # Import with overwrite
-        import_resp = import_bundle(
-            {"db_path": db_path, "bundle": bundle, "mode": "overwrite"}
-        )
+        import_resp = import_bundle({"db_path": db_path, "bundle": bundle, "mode": "overwrite"})
 
         assert import_resp["status"] == "ok"
         assert import_resp["imported_run_id"] == run_id
@@ -407,16 +402,12 @@ class TestRoundTrip:
         assert export_resp["ok"] is True
 
         # Import
-        import_resp = import_bundle(
-            {"db_path": target_db, "bundle": export_resp["artifact"]}
-        )
+        import_resp = import_bundle({"db_path": target_db, "bundle": export_resp["artifact"]})
         assert import_resp["status"] == "ok"
 
         # Replay both and compare
         source_replay = replay({"db_path": source_db, "run_id": original_run_id})
-        target_replay = replay(
-            {"db_path": target_db, "run_id": import_resp["imported_run_id"]}
-        )
+        target_replay = replay({"db_path": target_db, "run_id": import_resp["imported_run_id"]})
 
         assert source_replay["ok"] is True
         assert target_replay["ok"] is True

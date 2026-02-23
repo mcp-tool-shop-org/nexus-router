@@ -25,7 +25,7 @@ The factory_ref format is "module.path:function_name".
 from __future__ import annotations
 
 import importlib
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .dispatch import DispatchAdapter
 from .exceptions import NexusOperationalError
@@ -34,8 +34,8 @@ from .exceptions import NexusOperationalError
 class AdapterLoadError(NexusOperationalError):
     """Error loading an adapter from a plugin package."""
 
-    def __init__(self, message: str, *, factory_ref: str, cause: Optional[Exception] = None):
-        details: Dict[str, Any] = {"factory_ref": factory_ref}
+    def __init__(self, message: str, *, factory_ref: str, cause: Exception | None = None):
+        details: dict[str, Any] = {"factory_ref": factory_ref}
         if cause is not None:
             details["cause"] = str(cause)
             details["cause_type"] = type(cause).__name__
@@ -101,7 +101,7 @@ def load_adapter(factory_ref: str, **config: Any) -> DispatchAdapter:
             f"Failed to import module '{module_path}': {e}",
             factory_ref=factory_ref,
             cause=e,
-        )
+        ) from e
 
     # Get factory function
     try:
@@ -111,7 +111,7 @@ def load_adapter(factory_ref: str, **config: Any) -> DispatchAdapter:
             f"Module '{module_path}' has no attribute '{function_name}'",
             factory_ref=factory_ref,
             cause=e,
-        )
+        ) from e
 
     if not callable(factory):
         raise AdapterLoadError(
@@ -127,7 +127,7 @@ def load_adapter(factory_ref: str, **config: Any) -> DispatchAdapter:
             f"Factory '{function_name}' raised: {e}",
             factory_ref=factory_ref,
             cause=e,
-        )
+        ) from e
 
     # Validate result
     if not _is_dispatch_adapter(adapter):
@@ -137,7 +137,7 @@ def load_adapter(factory_ref: str, **config: Any) -> DispatchAdapter:
             factory_ref=factory_ref,
         )
 
-    return adapter
+    return adapter  # type: ignore[no-any-return]  # validated by _is_dispatch_adapter
 
 
 def _is_dispatch_adapter(obj: Any) -> bool:
@@ -151,7 +151,7 @@ def _is_dispatch_adapter(obj: Any) -> bool:
     )
 
 
-def get_adapter_metadata(adapter: DispatchAdapter) -> Dict[str, Any]:
+def get_adapter_metadata(adapter: DispatchAdapter) -> dict[str, Any]:
     """
     Extract metadata from an adapter for introspection.
 
@@ -178,7 +178,7 @@ MANIFEST_SCHEMA_VERSION = 1
 MANIFEST_CONFIG_TYPES = frozenset({"string", "number", "boolean", "object", "array"})
 
 
-def _get_adapter_manifest(module_path: str) -> Optional[Dict[str, Any]]:
+def _get_adapter_manifest(module_path: str) -> dict[str, Any] | None:
     """
     Load a module and extract ADAPTER_MANIFEST if present.
 
@@ -192,13 +192,13 @@ def _get_adapter_manifest(module_path: str) -> Optional[Dict[str, Any]]:
         module = importlib.import_module(module_path)
         manifest = getattr(module, "ADAPTER_MANIFEST", None)
         if manifest is not None and isinstance(manifest, dict):
-            return manifest
+            return manifest  # type: ignore[no-any-return]  # getattr returns Any
     except ImportError:
         pass  # Module import issues handled elsewhere
     return None
 
 
-def _validate_manifest_schema(manifest: Dict[str, Any]) -> list[str]:
+def _validate_manifest_schema(manifest: dict[str, Any]) -> list[str]:
     """
     Validate manifest has correct structure.
 
@@ -228,9 +228,10 @@ def _validate_manifest_schema(manifest: Dict[str, Any]) -> list[str]:
         errors.append("Field 'capabilities' must contain only strings")
 
     # Optional fields with type checks
-    if "supported_router_versions" in manifest:
-        if not isinstance(manifest["supported_router_versions"], str):
-            errors.append("Field 'supported_router_versions' must be a string")
+    if "supported_router_versions" in manifest and not isinstance(
+        manifest["supported_router_versions"], str
+    ):
+        errors.append("Field 'supported_router_versions' must be a string")
 
     if "error_codes" in manifest:
         if not isinstance(manifest["error_codes"], list):
@@ -269,7 +270,7 @@ class ValidationCheck:
         self.status = status  # "pass", "fail", "warn", "skip"
         self.message = message
 
-    def to_dict(self) -> Dict[str, str]:
+    def to_dict(self) -> dict[str, str]:
         return {
             "id": self.check_id,
             "status": self.status,
@@ -283,9 +284,9 @@ class ValidationResult:
     def __init__(
         self,
         ok: bool,
-        metadata: Optional[Dict[str, Any]],
+        metadata: dict[str, Any] | None,
         checks: list[ValidationCheck],
-        error: Optional[str] = None,
+        error: str | None = None,
     ) -> None:
         self.ok = ok
         self.metadata = metadata
@@ -302,8 +303,8 @@ class ValidationResult:
         """Checks with status='warn'."""
         return [c for c in self.checks if c.status == "warn"]
 
-    def to_dict(self) -> Dict[str, Any]:
-        result: Dict[str, Any] = {
+    def to_dict(self) -> dict[str, Any]:
+        result: dict[str, Any] = {
             "ok": self.ok,
             "metadata": self.metadata,
             "checks": [c.to_dict() for c in self.checks],
@@ -317,7 +318,7 @@ class ValidationResult:
 
 def validate_adapter(
     factory_ref: str,
-    config: Optional[Dict[str, Any]] = None,
+    config: dict[str, Any] | None = None,
     *,
     strict: bool = True,
 ) -> ValidationResult:
@@ -363,17 +364,21 @@ def validate_adapter(
     # LOAD_OK: Try to load the adapter
     try:
         adapter = load_adapter(factory_ref, **config)
-        checks.append(ValidationCheck(
-            "LOAD_OK",
-            "pass",
-            f"Successfully loaded adapter from '{factory_ref}'",
-        ))
+        checks.append(
+            ValidationCheck(
+                "LOAD_OK",
+                "pass",
+                f"Successfully loaded adapter from '{factory_ref}'",
+            )
+        )
     except AdapterLoadError as e:
-        checks.append(ValidationCheck(
-            "LOAD_OK",
-            "fail",
-            f"Failed to load adapter: {e}",
-        ))
+        checks.append(
+            ValidationCheck(
+                "LOAD_OK",
+                "fail",
+                f"Failed to load adapter: {e}",
+            )
+        )
         return ValidationResult(
             ok=False,
             metadata=None,
@@ -388,11 +393,13 @@ def validate_adapter(
             missing_fields.append(field)
 
     if missing_fields:
-        checks.append(ValidationCheck(
-            "PROTOCOL_FIELDS",
-            "fail",
-            f"Missing required fields: {', '.join(missing_fields)}",
-        ))
+        checks.append(
+            ValidationCheck(
+                "PROTOCOL_FIELDS",
+                "fail",
+                f"Missing required fields: {', '.join(missing_fields)}",
+            )
+        )
         return ValidationResult(
             ok=False,
             metadata=None,
@@ -402,11 +409,13 @@ def validate_adapter(
 
     # Check call is callable
     if not callable(getattr(adapter, "call", None)):
-        checks.append(ValidationCheck(
-            "PROTOCOL_FIELDS",
-            "fail",
-            "Field 'call' is not callable",
-        ))
+        checks.append(
+            ValidationCheck(
+                "PROTOCOL_FIELDS",
+                "fail",
+                "Field 'call' is not callable",
+            )
+        )
         return ValidationResult(
             ok=False,
             metadata=None,
@@ -414,11 +423,13 @@ def validate_adapter(
             error="call is not callable",
         )
 
-    checks.append(ValidationCheck(
-        "PROTOCOL_FIELDS",
-        "pass",
-        "All required protocol fields present and valid",
-    ))
+    checks.append(
+        ValidationCheck(
+            "PROTOCOL_FIELDS",
+            "pass",
+            "All required protocol fields present and valid",
+        )
+    )
 
     # Extract metadata now that we know fields exist
     metadata = get_adapter_metadata(adapter)
@@ -426,59 +437,73 @@ def validate_adapter(
     # ADAPTER_ID_FORMAT
     adapter_id = adapter.adapter_id
     if not isinstance(adapter_id, str) or not adapter_id:
-        checks.append(ValidationCheck(
-            "ADAPTER_ID_FORMAT",
-            "fail",
-            f"adapter_id must be non-empty string, got: {type(adapter_id).__name__}",
-        ))
+        checks.append(
+            ValidationCheck(
+                "ADAPTER_ID_FORMAT",
+                "fail",
+                f"adapter_id must be non-empty string, got: {type(adapter_id).__name__}",
+            )
+        )
     else:
-        checks.append(ValidationCheck(
-            "ADAPTER_ID_FORMAT",
-            "pass",
-            f"adapter_id='{adapter_id}'",
-        ))
+        checks.append(
+            ValidationCheck(
+                "ADAPTER_ID_FORMAT",
+                "pass",
+                f"adapter_id='{adapter_id}'",
+            )
+        )
 
     # ADAPTER_KIND_FORMAT
     adapter_kind = adapter.adapter_kind
     if not isinstance(adapter_kind, str) or not adapter_kind:
-        checks.append(ValidationCheck(
-            "ADAPTER_KIND_FORMAT",
-            "fail",
-            f"adapter_kind must be non-empty string, got: {type(adapter_kind).__name__}",
-        ))
+        checks.append(
+            ValidationCheck(
+                "ADAPTER_KIND_FORMAT",
+                "fail",
+                f"adapter_kind must be non-empty string, got: {type(adapter_kind).__name__}",
+            )
+        )
     else:
-        checks.append(ValidationCheck(
-            "ADAPTER_KIND_FORMAT",
-            "pass",
-            f"adapter_kind='{adapter_kind}'",
-        ))
+        checks.append(
+            ValidationCheck(
+                "ADAPTER_KIND_FORMAT",
+                "pass",
+                f"adapter_kind='{adapter_kind}'",
+            )
+        )
 
     # CAPABILITIES_TYPE: Check capabilities is set-like of strings
     capabilities = adapter.capabilities
     type_ok = True
 
     if not hasattr(capabilities, "__iter__"):
-        checks.append(ValidationCheck(
-            "CAPABILITIES_TYPE",
-            "fail",
-            f"capabilities must be iterable, got: {type(capabilities).__name__}",
-        ))
+        checks.append(
+            ValidationCheck(
+                "CAPABILITIES_TYPE",
+                "fail",
+                f"capabilities must be iterable, got: {type(capabilities).__name__}",
+            )
+        )
         type_ok = False
     else:
         non_strings = [c for c in capabilities if not isinstance(c, str)]
         if non_strings:
-            checks.append(ValidationCheck(
-                "CAPABILITIES_TYPE",
-                "fail",
-                f"capabilities contains non-string values: {non_strings}",
-            ))
+            checks.append(
+                ValidationCheck(
+                    "CAPABILITIES_TYPE",
+                    "fail",
+                    f"capabilities contains non-string values: {non_strings}",
+                )
+            )
             type_ok = False
         else:
-            checks.append(ValidationCheck(
-                "CAPABILITIES_TYPE",
-                "pass",
-                f"capabilities is valid set of {len(list(capabilities))} strings",
-            ))
+            checks.append(
+                ValidationCheck(
+                    "CAPABILITIES_TYPE",
+                    "pass",
+                    f"capabilities is valid set of {len(list(capabilities))} strings",
+                )
+            )
 
     # CAPABILITIES_VALID: Check only standard capabilities
     if type_ok:
@@ -487,23 +512,29 @@ def validate_adapter(
 
         if unknown:
             status = "fail" if strict else "warn"
-            checks.append(ValidationCheck(
-                "CAPABILITIES_VALID",
-                status,
-                f"Unknown capabilities (not in spec): {sorted(unknown)}",
-            ))
+            checks.append(
+                ValidationCheck(
+                    "CAPABILITIES_VALID",
+                    status,
+                    f"Unknown capabilities (not in spec): {sorted(unknown)}",
+                )
+            )
         else:
-            checks.append(ValidationCheck(
-                "CAPABILITIES_VALID",
-                "pass",
-                f"All capabilities are standard: {sorted(caps_set)}",
-            ))
+            checks.append(
+                ValidationCheck(
+                    "CAPABILITIES_VALID",
+                    "pass",
+                    f"All capabilities are standard: {sorted(caps_set)}",
+                )
+            )
     else:
-        checks.append(ValidationCheck(
-            "CAPABILITIES_VALID",
-            "skip",
-            "Skipped due to CAPABILITIES_TYPE failure",
-        ))
+        checks.append(
+            ValidationCheck(
+                "CAPABILITIES_VALID",
+                "skip",
+                "Skipped due to CAPABILITIES_TYPE failure",
+            )
+        )
 
     # MANIFEST_* checks: Validate ADAPTER_MANIFEST if present
     module_path = factory_ref.rsplit(":", 1)[0]
@@ -511,75 +542,97 @@ def validate_adapter(
 
     if manifest is None:
         # Warn if no manifest (optional but encouraged)
-        checks.append(ValidationCheck(
-            "MANIFEST_PRESENT",
-            "warn",
-            f"No ADAPTER_MANIFEST found in module '{module_path}' (optional but recommended)",
-        ))
+        checks.append(
+            ValidationCheck(
+                "MANIFEST_PRESENT",
+                "warn",
+                f"No ADAPTER_MANIFEST found in module '{module_path}' (optional but recommended)",
+            )
+        )
         # Skip other manifest checks
-        checks.append(ValidationCheck(
-            "MANIFEST_SCHEMA",
-            "skip",
-            "Skipped: no manifest present",
-        ))
-        checks.append(ValidationCheck(
-            "MANIFEST_KIND_MATCH",
-            "skip",
-            "Skipped: no manifest present",
-        ))
-        checks.append(ValidationCheck(
-            "MANIFEST_CAPS_MATCH",
-            "skip",
-            "Skipped: no manifest present",
-        ))
+        checks.append(
+            ValidationCheck(
+                "MANIFEST_SCHEMA",
+                "skip",
+                "Skipped: no manifest present",
+            )
+        )
+        checks.append(
+            ValidationCheck(
+                "MANIFEST_KIND_MATCH",
+                "skip",
+                "Skipped: no manifest present",
+            )
+        )
+        checks.append(
+            ValidationCheck(
+                "MANIFEST_CAPS_MATCH",
+                "skip",
+                "Skipped: no manifest present",
+            )
+        )
     else:
-        checks.append(ValidationCheck(
-            "MANIFEST_PRESENT",
-            "pass",
-            f"ADAPTER_MANIFEST found in module '{module_path}'",
-        ))
+        checks.append(
+            ValidationCheck(
+                "MANIFEST_PRESENT",
+                "pass",
+                f"ADAPTER_MANIFEST found in module '{module_path}'",
+            )
+        )
 
         # MANIFEST_SCHEMA: Validate structure
         schema_errors = _validate_manifest_schema(manifest)
         if schema_errors:
-            checks.append(ValidationCheck(
-                "MANIFEST_SCHEMA",
-                "fail",
-                f"Invalid manifest schema: {'; '.join(schema_errors)}",
-            ))
+            checks.append(
+                ValidationCheck(
+                    "MANIFEST_SCHEMA",
+                    "fail",
+                    f"Invalid manifest schema: {'; '.join(schema_errors)}",
+                )
+            )
             # Skip cross-checks if schema is invalid
-            checks.append(ValidationCheck(
-                "MANIFEST_KIND_MATCH",
-                "skip",
-                "Skipped: manifest schema invalid",
-            ))
-            checks.append(ValidationCheck(
-                "MANIFEST_CAPS_MATCH",
-                "skip",
-                "Skipped: manifest schema invalid",
-            ))
+            checks.append(
+                ValidationCheck(
+                    "MANIFEST_KIND_MATCH",
+                    "skip",
+                    "Skipped: manifest schema invalid",
+                )
+            )
+            checks.append(
+                ValidationCheck(
+                    "MANIFEST_CAPS_MATCH",
+                    "skip",
+                    "Skipped: manifest schema invalid",
+                )
+            )
         else:
-            checks.append(ValidationCheck(
-                "MANIFEST_SCHEMA",
-                "pass",
-                "Manifest schema is valid",
-            ))
+            checks.append(
+                ValidationCheck(
+                    "MANIFEST_SCHEMA",
+                    "pass",
+                    "Manifest schema is valid",
+                )
+            )
 
             # MANIFEST_KIND_MATCH: Cross-check kind
             manifest_kind = manifest["kind"]
             if manifest_kind != adapter_kind:
-                checks.append(ValidationCheck(
-                    "MANIFEST_KIND_MATCH",
-                    "fail",
-                    f"Manifest kind '{manifest_kind}' does not match "
-                    f"adapter_kind '{adapter_kind}'",
-                ))
+                checks.append(
+                    ValidationCheck(
+                        "MANIFEST_KIND_MATCH",
+                        "fail",
+                        f"Manifest kind '{manifest_kind}' does not match "
+                        f"adapter_kind '{adapter_kind}'",
+                    )
+                )
             else:
-                checks.append(ValidationCheck(
-                    "MANIFEST_KIND_MATCH",
-                    "pass",
-                    f"Manifest kind matches adapter_kind: '{adapter_kind}'",
-                ))
+                checks.append(
+                    ValidationCheck(
+                        "MANIFEST_KIND_MATCH",
+                        "pass",
+                        f"Manifest kind matches adapter_kind: '{adapter_kind}'",
+                    )
+                )
 
             # MANIFEST_CAPS_MATCH: Cross-check capabilities
             manifest_caps = set(manifest["capabilities"])
@@ -593,17 +646,21 @@ def validate_adapter(
                     mismatch_parts.append(f"extra in manifest: {sorted(extra_in_manifest)}")
                 if missing_from_manifest:
                     mismatch_parts.append(f"missing from manifest: {sorted(missing_from_manifest)}")
-                checks.append(ValidationCheck(
-                    "MANIFEST_CAPS_MATCH",
-                    "fail",
-                    f"Manifest capabilities do not match adapter: {'; '.join(mismatch_parts)}",
-                ))
+                checks.append(
+                    ValidationCheck(
+                        "MANIFEST_CAPS_MATCH",
+                        "fail",
+                        f"Manifest capabilities do not match adapter: {'; '.join(mismatch_parts)}",
+                    )
+                )
             else:
-                checks.append(ValidationCheck(
-                    "MANIFEST_CAPS_MATCH",
-                    "pass",
-                    f"Manifest capabilities match adapter: {sorted(adapter_caps)}",
-                ))
+                checks.append(
+                    ValidationCheck(
+                        "MANIFEST_CAPS_MATCH",
+                        "pass",
+                        f"Manifest capabilities match adapter: {sorted(adapter_caps)}",
+                    )
+                )
 
         # Add manifest to metadata
         metadata["manifest"] = manifest
@@ -618,7 +675,7 @@ def validate_adapter(
     )
 
 
-def _render_config_param(name: str, schema: Dict[str, Any]) -> Dict[str, Any]:
+def _render_config_param(name: str, schema: dict[str, Any]) -> dict[str, Any]:
     """Render a config_schema entry into human-friendly format."""
     rendered = {
         "name": name,
@@ -639,13 +696,13 @@ class InspectionResult:
         self,
         ok: bool,
         validation: ValidationResult,
-        adapter_id: Optional[str],
-        adapter_kind: Optional[str],
-        capabilities: Optional[list[str]],
-        manifest: Optional[Dict[str, Any]],
-        config_params: Optional[list[Dict[str, Any]]],
-        error_codes: Optional[list[str]],
-        supported_router_versions: Optional[str],
+        adapter_id: str | None,
+        adapter_kind: str | None,
+        capabilities: list[str] | None,
+        manifest: dict[str, Any] | None,
+        config_params: list[dict[str, Any]] | None,
+        error_codes: list[str] | None,
+        supported_router_versions: str | None,
     ) -> None:
         self.ok = ok
         self.validation = validation
@@ -667,7 +724,7 @@ class InspectionResult:
         """Validation warnings."""
         return self.validation.warnings
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to serializable dict."""
         return {
             "ok": self.ok,
@@ -752,7 +809,7 @@ class InspectionResult:
 
 def inspect_adapter(
     factory_ref: str,
-    config: Optional[Dict[str, Any]] = None,
+    config: dict[str, Any] | None = None,
     *,
     strict: bool = True,
 ) -> InspectionResult:
@@ -785,17 +842,16 @@ def inspect_adapter(
     manifest = metadata.get("manifest")
 
     # Build config params from manifest
-    config_params: Optional[list[Dict[str, Any]]] = None
-    error_codes: Optional[list[str]] = None
-    supported_router_versions: Optional[str] = None
+    config_params: list[dict[str, Any]] | None = None
+    error_codes: list[str] | None = None
+    supported_router_versions: str | None = None
 
     if manifest:
         # Extract config schema
         config_schema = manifest.get("config_schema", {})
         if config_schema:
             config_params = [
-                _render_config_param(name, schema)
-                for name, schema in sorted(config_schema.items())
+                _render_config_param(name, schema) for name, schema in sorted(config_schema.items())
             ]
 
         # Extract error codes

@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import json
 from importlib import resources
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, cast
 
 from .dispatch import AdapterRegistry, DispatchAdapter
+from .docs import generate_adapter_docs as _generate_docs_impl
 from .event_store import EventStore
 from .export import export_run as _export_impl
 from .import_ import import_bundle as _import_impl
 from .inspect import inspect as _inspect_impl
-from .docs import generate_adapter_docs as _generate_docs_impl
 from .plugins import inspect_adapter as _inspect_adapter_impl
 from .plugins import validate_adapter as _validate_adapter_impl
 from .replay import replay as _replay_impl
@@ -33,26 +33,28 @@ TOOL_ID_GENERATE_DOCS = "nexus-router.generate_adapter_docs"
 TOOL_ID = TOOL_ID_RUN
 
 # Schema cache
-_SCHEMAS: Dict[str, Dict[str, Any]] = {}
+_SCHEMAS: dict[str, dict[str, Any]] = {}
 
 
-def _load_schema(name: str) -> Dict[str, Any]:
+def _load_schema(name: str) -> dict[str, Any]:
     """Load a schema from package data with caching."""
     if name not in _SCHEMAS:
-        with resources.files("nexus_router").joinpath(f"schemas/{name}").open(
-            "r", encoding="utf-8"
-        ) as f:
-            _SCHEMAS[name] = cast(Dict[str, Any], json.load(f))
+        with (
+            resources.files("nexus_router")
+            .joinpath(f"schemas/{name}")
+            .open("r", encoding="utf-8") as f
+        ):
+            _SCHEMAS[name] = cast(dict[str, Any], json.load(f))
     return _SCHEMAS[name]
 
 
 def run(
-    request: Dict[str, Any],
+    request: dict[str, Any],
     *,
     db_path: str = ":memory:",
-    adapter: Optional[DispatchAdapter] = None,
-    adapters: Optional[AdapterRegistry] = None,
-) -> Dict[str, Any]:
+    adapter: DispatchAdapter | None = None,
+    adapters: AdapterRegistry | None = None,
+) -> dict[str, Any]:
     """
     Execute a nexus-router run.
 
@@ -89,8 +91,8 @@ def run(
 def list_adapters(
     adapters: AdapterRegistry,
     *,
-    capability: Optional[str] = None,
-) -> Dict[str, Any]:
+    capability: str | None = None,
+) -> dict[str, Any]:
     """
     List registered adapters (nexus-router.adapters tool).
 
@@ -121,7 +123,7 @@ def list_adapters(
     }
 
 
-def inspect(request: Dict[str, Any]) -> Dict[str, Any]:
+def inspect(request: dict[str, Any]) -> dict[str, Any]:
     """
     Inspect the event store and return run summaries.
 
@@ -149,7 +151,7 @@ def inspect(request: Dict[str, Any]) -> Dict[str, Any]:
     )
 
 
-def replay(request: Dict[str, Any]) -> Dict[str, Any]:
+def replay(request: dict[str, Any]) -> dict[str, Any]:
     """
     Replay a run from events and check invariants.
 
@@ -174,7 +176,7 @@ def replay(request: Dict[str, Any]) -> Dict[str, Any]:
     )
 
 
-def export(request: Dict[str, Any]) -> Dict[str, Any]:
+def export(request: dict[str, Any]) -> dict[str, Any]:
     """
     Export a run as a deterministic, portable bundle.
 
@@ -199,7 +201,7 @@ def export(request: Dict[str, Any]) -> Dict[str, Any]:
     )
 
 
-def import_bundle(request: Dict[str, Any]) -> Dict[str, Any]:
+def import_bundle(request: dict[str, Any]) -> dict[str, Any]:
     """
     Import a bundle into a database safely.
 
@@ -228,7 +230,7 @@ def import_bundle(request: Dict[str, Any]) -> Dict[str, Any]:
     )
 
 
-def validate_adapter(request: Dict[str, Any]) -> Dict[str, Any]:
+def validate_adapter(request: dict[str, Any]) -> dict[str, Any]:
     """
     Validate an adapter package without dispatch (adapter lint tool).
 
@@ -271,7 +273,7 @@ def validate_adapter(request: Dict[str, Any]) -> Dict[str, Any]:
     return result.to_dict()
 
 
-def inspect_adapter(request: Dict[str, Any]) -> Dict[str, Any]:
+def inspect_adapter(request: dict[str, Any]) -> dict[str, Any]:
     """
     Inspect an adapter package with human-friendly output.
 
@@ -320,7 +322,7 @@ def inspect_adapter(request: Dict[str, Any]) -> Dict[str, Any]:
     return response
 
 
-def generate_adapter_docs(request: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def generate_adapter_docs(request: dict[str, Any] | None = None) -> dict[str, Any]:
     """
     Generate markdown documentation from adapter manifests.
 

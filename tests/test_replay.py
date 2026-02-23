@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from importlib import resources
 from pathlib import Path
-from typing import Any, Dict, cast
+from typing import Any, cast
 
 import jsonschema
 
@@ -14,11 +14,11 @@ from nexus_router.event_store import EventStore
 from nexus_router.tool import replay, run
 
 
-def _load_schema(name: str) -> Dict[str, Any]:
-    with resources.files("nexus_router").joinpath(f"schemas/{name}").open(
-        "r", encoding="utf-8"
-    ) as f:
-        return cast(Dict[str, Any], json.load(f))
+def _load_schema(name: str) -> dict[str, Any]:
+    with (
+        resources.files("nexus_router").joinpath(f"schemas/{name}").open("r", encoding="utf-8") as f
+    ):
+        return cast(dict[str, Any], json.load(f))
 
 
 REPLAY_REQUEST_SCHEMA = _load_schema("nexus-router.replay.request.v0.2.json")
@@ -101,9 +101,7 @@ class TestReplayGoldenFixtures:
         assert len(response["violations"]) == 1
         assert response["violations"][0]["code"] == "RUN_NOT_FOUND"
 
-    def test_replay_invariant_violation_step_completed_without_start(
-        self, tmp_path: Path
-    ) -> None:
+    def test_replay_invariant_violation_step_completed_without_start(self, tmp_path: Path) -> None:
         """Replay detects STEP_COMPLETED without STEP_STARTED."""
         db_path = str(tmp_path / "test.db")
 

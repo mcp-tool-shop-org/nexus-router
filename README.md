@@ -33,7 +33,7 @@
 | Brand / repo | `nexus-router` |
 | Python package | `nexus_router` |
 | MCP tool ID | `nexus-router.run` |
-| Author | [mcp-tool-shop](https://github.com/mcp-tool-shop) |
+| Author | [mcp-tool-shop](https://github.com/mcp-tool-shop-org) |
 | License | MIT |
 
 ## Install
@@ -157,7 +157,7 @@ Error codes: `TIMEOUT`, `NONZERO_EXIT`, `INVALID_JSON_OUTPUT`, `COMMAND_NOT_FOUN
 
 ## What This Version Is (and Isn't)
 
-v1.0 is a **platform-grade** event-sourced router with a complete adapter ecosystem:
+v1.1 is a **platform-grade** event-sourced router with a complete adapter ecosystem (16 modules, 346 tests):
 
 **Core Router:**
 - Event log with monotonic sequencing

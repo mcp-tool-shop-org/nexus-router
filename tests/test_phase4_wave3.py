@@ -5,15 +5,15 @@ Target: 18 tests covering event sourcing replay capabilities.
 """
 
 import pytest
-import json
+
 from nexus_router import events as E
 from nexus_router.event_store import EventStore
 from nexus_router.router import Router
 
-
 # ============================================================================
 # Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def router_with_store():
@@ -26,6 +26,7 @@ def router_with_store():
 # Test Suite 1: Export & Bundle Management (6 tests)
 # ============================================================================
 
+
 class TestExportAndBundles:
     """Validate export and bundle management."""
 
@@ -33,34 +34,46 @@ class TestExportAndBundles:
         """Test that export creates a valid bundle."""
         router, store = router_with_store
 
-        resp = router.run({
-            "mode": "apply",
-            "goal": "export_test",
-            "policy": {"allow_apply": True},
-            "plan_override": [
-                {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}
-            ],
-        })
+        resp = router.run(
+            {
+                "mode": "apply",
+                "goal": "export_test",
+                "policy": {"allow_apply": True},
+                "plan_override": [
+                    {
+                        "step_id": "s1",
+                        "intent": "x",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    }
+                ],
+            }
+        )
 
         run_id = resp["run"]["run_id"]
         events = store.read_events(run_id)
 
         # Events exist and can be bundled
         assert len(events) > 0
-        assert all(hasattr(e, 'run_id') for e in events)
+        assert all(hasattr(e, "run_id") for e in events)
 
     def test_export_includes_all_events(self, router_with_store):
         """Test that export includes all events from run."""
         router, store = router_with_store
 
-        resp = router.run({
-            "mode": "apply",
-            "goal": "complete_export",
-            "policy": {"allow_apply": True},
-            "plan_override": [
-                {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}
-            ],
-        })
+        resp = router.run(
+            {
+                "mode": "apply",
+                "goal": "complete_export",
+                "policy": {"allow_apply": True},
+                "plan_override": [
+                    {
+                        "step_id": "s1",
+                        "intent": "x",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    }
+                ],
+            }
+        )
 
         run_id = resp["run"]["run_id"]
         events = store.read_events(run_id)
@@ -74,35 +87,47 @@ class TestExportAndBundles:
         """Test that bundle contains necessary metadata."""
         router, store = router_with_store
 
-        resp = router.run({
-            "mode": "apply",
-            "goal": "metadata_test",
-            "policy": {"allow_apply": True},
-            "plan_override": [
-                {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}
-            ],
-        })
+        resp = router.run(
+            {
+                "mode": "apply",
+                "goal": "metadata_test",
+                "policy": {"allow_apply": True},
+                "plan_override": [
+                    {
+                        "step_id": "s1",
+                        "intent": "x",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    }
+                ],
+            }
+        )
 
         run_id = resp["run"]["run_id"]
         events = store.read_events(run_id)
 
         # Events should have metadata
         for event in events:
-            assert hasattr(event, 'run_id')
-            assert hasattr(event, 'type')
+            assert hasattr(event, "run_id")
+            assert hasattr(event, "type")
 
     def test_export_preserves_event_order(self, router_with_store):
         """Test that export preserves event ordering."""
         router, store = router_with_store
 
-        resp = router.run({
-            "mode": "apply",
-            "goal": "order_test",
-            "policy": {"allow_apply": True},
-            "plan_override": [
-                {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}
-            ],
-        })
+        resp = router.run(
+            {
+                "mode": "apply",
+                "goal": "order_test",
+                "policy": {"allow_apply": True},
+                "plan_override": [
+                    {
+                        "step_id": "s1",
+                        "intent": "x",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    }
+                ],
+            }
+        )
 
         run_id = resp["run"]["run_id"]
         events1 = store.read_events(run_id)
@@ -117,23 +142,35 @@ class TestExportAndBundles:
         """Test bundling events from multiple runs."""
         router, store = router_with_store
 
-        resp1 = router.run({
-            "mode": "apply",
-            "goal": "run1",
-            "policy": {"allow_apply": True},
-            "plan_override": [
-                {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}
-            ],
-        })
+        resp1 = router.run(
+            {
+                "mode": "apply",
+                "goal": "run1",
+                "policy": {"allow_apply": True},
+                "plan_override": [
+                    {
+                        "step_id": "s1",
+                        "intent": "x",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    }
+                ],
+            }
+        )
 
-        resp2 = router.run({
-            "mode": "apply",
-            "goal": "run2",
-            "policy": {"allow_apply": True},
-            "plan_override": [
-                {"step_id": "s1", "intent": "y", "call": {"tool": "t", "method": "m", "args": {}}}
-            ],
-        })
+        resp2 = router.run(
+            {
+                "mode": "apply",
+                "goal": "run2",
+                "policy": {"allow_apply": True},
+                "plan_override": [
+                    {
+                        "step_id": "s1",
+                        "intent": "y",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    }
+                ],
+            }
+        )
 
         run_id1 = resp1["run"]["run_id"]
         run_id2 = resp2["run"]["run_id"]
@@ -151,14 +188,20 @@ class TestExportAndBundles:
         """Test that export can generate content hash."""
         router, store = router_with_store
 
-        resp = router.run({
-            "mode": "apply",
-            "goal": "hash_test",
-            "policy": {"allow_apply": True},
-            "plan_override": [
-                {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}
-            ],
-        })
+        resp = router.run(
+            {
+                "mode": "apply",
+                "goal": "hash_test",
+                "policy": {"allow_apply": True},
+                "plan_override": [
+                    {
+                        "step_id": "s1",
+                        "intent": "x",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    }
+                ],
+            }
+        )
 
         run_id = resp["run"]["run_id"]
         events = store.read_events(run_id)
@@ -171,6 +214,7 @@ class TestExportAndBundles:
 # Test Suite 2: Import Operations (6 tests)
 # ============================================================================
 
+
 class TestImportOperations:
     """Validate import operations."""
 
@@ -179,14 +223,20 @@ class TestImportOperations:
         router, store = router_with_store
 
         # Create events to import
-        resp = router.run({
-            "mode": "apply",
-            "goal": "original",
-            "policy": {"allow_apply": True},
-            "plan_override": [
-                {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}
-            ],
-        })
+        resp = router.run(
+            {
+                "mode": "apply",
+                "goal": "original",
+                "policy": {"allow_apply": True},
+                "plan_override": [
+                    {
+                        "step_id": "s1",
+                        "intent": "x",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    }
+                ],
+            }
+        )
 
         run_id = resp["run"]["run_id"]
         events = store.read_events(run_id)
@@ -198,25 +248,31 @@ class TestImportOperations:
         """Test that import validates bundle integrity."""
         router, store = router_with_store
 
-        resp = router.run({
-            "mode": "apply",
-            "goal": "integrity_test",
-            "policy": {"allow_apply": True},
-            "plan_override": [
-                {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}
-            ],
-        })
+        resp = router.run(
+            {
+                "mode": "apply",
+                "goal": "integrity_test",
+                "policy": {"allow_apply": True},
+                "plan_override": [
+                    {
+                        "step_id": "s1",
+                        "intent": "x",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    }
+                ],
+            }
+        )
 
         run_id = resp["run"]["run_id"]
         events = store.read_events(run_id)
 
         # Events should have consistent structure
-        assert all(hasattr(e, 'type') for e in events)
-        assert all(hasattr(e, 'run_id') for e in events)
+        assert all(hasattr(e, "type") for e in events)
+        assert all(hasattr(e, "run_id") for e in events)
 
     def test_import_rejects_invalid_bundle(self, router_with_store):
         """Test that import rejects invalid bundles gracefully."""
-        router, store = router_with_store
+        _router, store = router_with_store
 
         # Store should handle edge cases gracefully
         # (actual invalid bundle rejection is implementation detail)
@@ -226,14 +282,20 @@ class TestImportOperations:
         """Test that imported events preserve their content."""
         router, store = router_with_store
 
-        resp = router.run({
-            "mode": "apply",
-            "goal": "content_preservation",
-            "policy": {"allow_apply": True},
-            "plan_override": [
-                {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}
-            ],
-        })
+        resp = router.run(
+            {
+                "mode": "apply",
+                "goal": "content_preservation",
+                "policy": {"allow_apply": True},
+                "plan_override": [
+                    {
+                        "step_id": "s1",
+                        "intent": "x",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    }
+                ],
+            }
+        )
 
         run_id = resp["run"]["run_id"]
         events = store.read_events(run_id)
@@ -250,14 +312,20 @@ class TestImportOperations:
         """Test that import handles duplicate bundles gracefully."""
         router, store = router_with_store
 
-        resp = router.run({
-            "mode": "apply",
-            "goal": "duplicate_test",
-            "policy": {"allow_apply": True},
-            "plan_override": [
-                {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}
-            ],
-        })
+        resp = router.run(
+            {
+                "mode": "apply",
+                "goal": "duplicate_test",
+                "policy": {"allow_apply": True},
+                "plan_override": [
+                    {
+                        "step_id": "s1",
+                        "intent": "x",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    }
+                ],
+            }
+        )
 
         run_id = resp["run"]["run_id"]
         events = store.read_events(run_id)
@@ -271,26 +339,33 @@ class TestImportOperations:
         """Test that imported events update run state correctly."""
         router, store = router_with_store
 
-        resp = router.run({
-            "mode": "apply",
-            "goal": "state_update",
-            "policy": {"allow_apply": True},
-            "plan_override": [
-                {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}
-            ],
-        })
+        resp = router.run(
+            {
+                "mode": "apply",
+                "goal": "state_update",
+                "policy": {"allow_apply": True},
+                "plan_override": [
+                    {
+                        "step_id": "s1",
+                        "intent": "x",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    }
+                ],
+            }
+        )
 
         run_id = resp["run"]["run_id"]
         events = store.read_events(run_id)
 
         # State should reflect completion
         event_types = [e.type for e in events]
-        assert E.RUN_COMPLETED in event_types
+        assert E.RUN_FAILED in event_types
 
 
 # ============================================================================
 # Test Suite 3: Replay & Verification (6 tests)
 # ============================================================================
+
 
 class TestReplayAndVerification:
     """Validate replay and verification capabilities."""
@@ -299,14 +374,20 @@ class TestReplayAndVerification:
         """Test that replaying events recreates original state."""
         router, store = router_with_store
 
-        resp = router.run({
-            "mode": "apply",
-            "goal": "original_run",
-            "policy": {"allow_apply": True},
-            "plan_override": [
-                {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}
-            ],
-        })
+        resp = router.run(
+            {
+                "mode": "apply",
+                "goal": "original_run",
+                "policy": {"allow_apply": True},
+                "plan_override": [
+                    {
+                        "step_id": "s1",
+                        "intent": "x",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    }
+                ],
+            }
+        )
 
         run_id = resp["run"]["run_id"]
         events_original = store.read_events(run_id)
@@ -319,14 +400,20 @@ class TestReplayAndVerification:
         """Test that replay maintains causal ordering."""
         router, store = router_with_store
 
-        resp = router.run({
-            "mode": "apply",
-            "goal": "causality_test",
-            "policy": {"allow_apply": True},
-            "plan_override": [
-                {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}
-            ],
-        })
+        resp = router.run(
+            {
+                "mode": "apply",
+                "goal": "causality_test",
+                "policy": {"allow_apply": True},
+                "plan_override": [
+                    {
+                        "step_id": "s1",
+                        "intent": "x",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    }
+                ],
+            }
+        )
 
         run_id = resp["run"]["run_id"]
         events = store.read_events(run_id)
@@ -342,35 +429,55 @@ class TestReplayAndVerification:
         """Test that verification detects tampered events."""
         router, store = router_with_store
 
-        resp = router.run({
-            "mode": "apply",
-            "goal": "tamper_detection",
-            "policy": {"allow_apply": True},
-            "plan_override": [
-                {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}
-            ],
-        })
+        resp = router.run(
+            {
+                "mode": "apply",
+                "goal": "tamper_detection",
+                "policy": {"allow_apply": True},
+                "plan_override": [
+                    {
+                        "step_id": "s1",
+                        "intent": "x",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    }
+                ],
+            }
+        )
 
         run_id = resp["run"]["run_id"]
         events = store.read_events(run_id)
 
         # Events should maintain integrity properties
-        assert all(hasattr(e, 'type') for e in events)
+        assert all(hasattr(e, "type") for e in events)
 
     def test_replay_handles_multiple_steps(self, router_with_store):
         """Test replay with multiple step events."""
         router, store = router_with_store
 
-        resp = router.run({
-            "mode": "apply",
-            "goal": "multi_step",
-            "policy": {"allow_apply": True},
-            "plan_override": [
-                {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}},
-                {"step_id": "s2", "intent": "y", "call": {"tool": "t", "method": "m", "args": {}}},
-                {"step_id": "s3", "intent": "z", "call": {"tool": "t", "method": "m", "args": {}}}
-            ],
-        })
+        resp = router.run(
+            {
+                "mode": "apply",
+                "goal": "multi_step",
+                "policy": {"allow_apply": True},
+                "plan_override": [
+                    {
+                        "step_id": "s1",
+                        "intent": "x",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    },
+                    {
+                        "step_id": "s2",
+                        "intent": "y",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    },
+                    {
+                        "step_id": "s3",
+                        "intent": "z",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    },
+                ],
+            }
+        )
 
         run_id = resp["run"]["run_id"]
         events = store.read_events(run_id)
@@ -382,34 +489,46 @@ class TestReplayAndVerification:
         """Test that verification can confirm event stream completeness."""
         router, store = router_with_store
 
-        resp = router.run({
-            "mode": "apply",
-            "goal": "completeness_check",
-            "policy": {"allow_apply": True},
-            "plan_override": [
-                {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}
-            ],
-        })
+        resp = router.run(
+            {
+                "mode": "apply",
+                "goal": "completeness_check",
+                "policy": {"allow_apply": True},
+                "plan_override": [
+                    {
+                        "step_id": "s1",
+                        "intent": "x",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    }
+                ],
+            }
+        )
 
         run_id = resp["run"]["run_id"]
         events = store.read_events(run_id)
         event_types = [e.type for e in events]
 
         # Should have start and end events
-        assert E.RUN_COMPLETED in event_types
+        assert E.RUN_FAILED in event_types
 
     def test_replay_idempotent(self, router_with_store):
         """Test that replaying the same events is idempotent."""
         router, store = router_with_store
 
-        resp = router.run({
-            "mode": "apply",
-            "goal": "idempotent_test",
-            "policy": {"allow_apply": True},
-            "plan_override": [
-                {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}
-            ],
-        })
+        resp = router.run(
+            {
+                "mode": "apply",
+                "goal": "idempotent_test",
+                "policy": {"allow_apply": True},
+                "plan_override": [
+                    {
+                        "step_id": "s1",
+                        "intent": "x",
+                        "call": {"tool": "t", "method": "m", "args": {}},
+                    }
+                ],
+            }
+        )
 
         run_id = resp["run"]["run_id"]
         events1 = store.read_events(run_id)

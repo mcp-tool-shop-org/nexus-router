@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import warnings
-
 from nexus_router import events as E
 from nexus_router.dispatch import (
     CAPABILITY_APPLY,

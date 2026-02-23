@@ -7,10 +7,9 @@ Rename the package from nexus_router_adapter_example to nexus_router_adapter_{ki
 
 from __future__ import annotations
 
-from typing import Any, Dict, FrozenSet, Optional
+from typing import Any
 
 from nexus_router.dispatch import CAPABILITY_APPLY
-from nexus_router.exceptions import NexusOperationalError
 
 __all__ = [
     "ExampleAdapter",
@@ -23,7 +22,7 @@ __version__ = "0.1.0"
 
 # Module-level metadata (per ADAPTER_SPEC.md)
 ADAPTER_KIND = "example"  # TODO: Change to your adapter kind
-DEFAULT_CAPABILITIES: FrozenSet[str] = frozenset({CAPABILITY_APPLY})
+DEFAULT_CAPABILITIES: frozenset[str] = frozenset({CAPABILITY_APPLY})
 
 # Adapter manifest (v0.10+)
 ADAPTER_MANIFEST = {
@@ -63,7 +62,7 @@ class ExampleAdapter:
     def __init__(
         self,
         *,
-        adapter_id: Optional[str] = None,
+        adapter_id: str | None = None,
         # TODO: Add your config parameters
     ) -> None:
         """
@@ -88,11 +87,11 @@ class ExampleAdapter:
         return ADAPTER_KIND
 
     @property
-    def capabilities(self) -> FrozenSet[str]:
+    def capabilities(self) -> frozenset[str]:
         """Declared capabilities."""
         return self._capabilities
 
-    def call(self, tool: str, method: str, args: Dict[str, Any]) -> Dict[str, Any]:
+    def call(self, tool: str, method: str, args: dict[str, Any]) -> dict[str, Any]:
         """
         Execute a tool call.
 
@@ -130,7 +129,7 @@ class ExampleAdapter:
 
 def create_adapter(
     *,
-    adapter_id: Optional[str] = None,
+    adapter_id: str | None = None,
     # TODO: Add your config parameters
 ) -> ExampleAdapter:
     """

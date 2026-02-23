@@ -7,17 +7,21 @@ from pathlib import Path
 
 import pytest
 
+try:
+    import nexus_router_adapter_http  # noqa: F401
+
+    HAS_HTTP_ADAPTER = True
+except ImportError:
+    HAS_HTTP_ADAPTER = False
+
 from nexus_router.plugins import (
     STANDARD_CAPABILITIES,
     InspectionResult,
-    ValidationCheck,
-    ValidationResult,
     inspect_adapter,
     validate_adapter,
 )
 from nexus_router.tool import inspect_adapter as inspect_adapter_tool
 from nexus_router.tool import validate_adapter as validate_adapter_tool
-
 
 # Add fixtures directory to path for testing
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
@@ -51,6 +55,7 @@ class TestValidateAdapterSuccess:
         assert result.ok is True
         assert result.metadata["adapter_id"] == "custom-id"
 
+    @pytest.mark.skipif(not HAS_HTTP_ADAPTER, reason="nexus-router-adapter-http not installed")
     def test_validate_http_adapter(self) -> None:
         """Validate HTTP adapter passes all checks."""
         result = validate_adapter(
@@ -240,9 +245,11 @@ class TestToolValidateAdapter:
 
     def test_tool_api(self) -> None:
         """tool.validate_adapter() works with request dict."""
-        response = validate_adapter_tool({
-            "factory_ref": "toy_adapter_pkg:create_adapter",
-        })
+        response = validate_adapter_tool(
+            {
+                "factory_ref": "toy_adapter_pkg:create_adapter",
+            }
+        )
 
         assert response["ok"] is True
         assert "metadata" in response
@@ -250,10 +257,12 @@ class TestToolValidateAdapter:
 
     def test_tool_api_with_config(self) -> None:
         """tool.validate_adapter() passes config to factory."""
-        response = validate_adapter_tool({
-            "factory_ref": "toy_adapter_pkg:create_adapter",
-            "config": {"adapter_id": "tool-test"},
-        })
+        response = validate_adapter_tool(
+            {
+                "factory_ref": "toy_adapter_pkg:create_adapter",
+                "config": {"adapter_id": "tool-test"},
+            }
+        )
 
         assert response["ok"] is True
         assert response["metadata"]["adapter_id"] == "tool-test"
@@ -261,18 +270,22 @@ class TestToolValidateAdapter:
     def test_tool_api_strict_option(self) -> None:
         """tool.validate_adapter() respects strict option."""
         # Strict mode (default) - fails on CAPABILITIES_VALID and MANIFEST_CAPS_MATCH
-        response = validate_adapter_tool({
-            "factory_ref": "toy_adapter_pkg:create_adapter",
-            "config": {"capabilities": frozenset({"invented"})},
-        })
+        response = validate_adapter_tool(
+            {
+                "factory_ref": "toy_adapter_pkg:create_adapter",
+                "config": {"capabilities": frozenset({"invented"})},
+            }
+        )
         assert response["ok"] is False
 
         # Non-strict mode - CAPABILITIES_VALID warns, but MANIFEST_CAPS_MATCH still fails
-        response = validate_adapter_tool({
-            "factory_ref": "toy_adapter_pkg:create_adapter",
-            "config": {"capabilities": frozenset({"invented"})},
-            "strict": False,
-        })
+        response = validate_adapter_tool(
+            {
+                "factory_ref": "toy_adapter_pkg:create_adapter",
+                "config": {"capabilities": frozenset({"invented"})},
+                "strict": False,
+            }
+        )
         # Still fails because manifest capabilities don't match
         assert response["ok"] is False
         # Verify CAPABILITIES_VALID is warn (strict=False effect)
@@ -348,6 +361,7 @@ class TestManifestValidation:
         assert "apply" in manifest["capabilities"]
         assert "config_schema" in manifest
 
+    @pytest.mark.skipif(not HAS_HTTP_ADAPTER, reason="nexus-router-adapter-http not installed")
     def test_http_adapter_manifest(self) -> None:
         """HTTP adapter has valid manifest with full config_schema."""
         result = validate_adapter(
@@ -385,6 +399,7 @@ class TestInspectAdapter:
         assert "apply" in result.capabilities
         assert "dry_run" in result.capabilities
 
+    @pytest.mark.skipif(not HAS_HTTP_ADAPTER, reason="nexus-router-adapter-http not installed")
     def test_inspect_http_adapter_with_manifest(self) -> None:
         """inspect_adapter extracts manifest data."""
         result = inspect_adapter(
@@ -399,6 +414,7 @@ class TestInspectAdapter:
         assert "TIMEOUT" in result.error_codes
         assert "CONNECTION_FAILED" in result.error_codes
 
+    @pytest.mark.skipif(not HAS_HTTP_ADAPTER, reason="nexus-router-adapter-http not installed")
     def test_inspect_config_params(self) -> None:
         """inspect_adapter extracts config_params from manifest."""
         result = inspect_adapter(
@@ -436,6 +452,7 @@ class TestInspectAdapter:
         assert "manifest" in d
         assert d["ok"] is True
 
+    @pytest.mark.skipif(not HAS_HTTP_ADAPTER, reason="nexus-router-adapter-http not installed")
     def test_inspect_render(self) -> None:
         """render() produces human-readable output."""
         result = inspect_adapter(
@@ -479,22 +496,27 @@ class TestInspectAdapterTool:
 
     def test_tool_api(self) -> None:
         """tool.inspect_adapter() works with request dict."""
-        response = inspect_adapter_tool({
-            "factory_ref": "toy_adapter_pkg:create_adapter",
-        })
+        response = inspect_adapter_tool(
+            {
+                "factory_ref": "toy_adapter_pkg:create_adapter",
+            }
+        )
 
         assert response["ok"] is True
         assert response["adapter_id"] == "toy"
         assert response["adapter_kind"] == "toy"
         assert "validation" in response
 
+    @pytest.mark.skipif(not HAS_HTTP_ADAPTER, reason="nexus-router-adapter-http not installed")
     def test_tool_api_with_render(self) -> None:
         """tool.inspect_adapter() includes rendered output when requested."""
-        response = inspect_adapter_tool({
-            "factory_ref": "nexus_router_adapter_http:create_adapter",
-            "config": {"base_url": "https://example.com"},
-            "render": True,
-        })
+        response = inspect_adapter_tool(
+            {
+                "factory_ref": "nexus_router_adapter_http:create_adapter",
+                "config": {"base_url": "https://example.com"},
+                "render": True,
+            }
+        )
 
         assert "rendered" in response
         assert "Adapter validation PASSED" in response["rendered"]
@@ -502,18 +524,22 @@ class TestInspectAdapterTool:
 
     def test_tool_api_without_render(self) -> None:
         """tool.inspect_adapter() omits rendered output by default."""
-        response = inspect_adapter_tool({
-            "factory_ref": "toy_adapter_pkg:create_adapter",
-        })
+        response = inspect_adapter_tool(
+            {
+                "factory_ref": "toy_adapter_pkg:create_adapter",
+            }
+        )
 
         assert "rendered" not in response
 
     def test_tool_api_strict_option(self) -> None:
         """tool.inspect_adapter() respects strict option."""
-        response = inspect_adapter_tool({
-            "factory_ref": "toy_adapter_pkg:create_adapter",
-            "config": {"capabilities": frozenset({"invented"})},
-            "strict": True,
-        })
+        response = inspect_adapter_tool(
+            {
+                "factory_ref": "toy_adapter_pkg:create_adapter",
+                "config": {"capabilities": frozenset({"invented"})},
+                "strict": True,
+            }
+        )
 
         assert response["ok"] is False

@@ -8,11 +8,10 @@ from pathlib import Path
 import pytest
 
 from nexus_router import events as E
-from nexus_router.dispatch import AdapterRegistry, CAPABILITY_APPLY, CAPABILITY_DRY_RUN
+from nexus_router.dispatch import CAPABILITY_APPLY, CAPABILITY_DRY_RUN, AdapterRegistry
 from nexus_router.event_store import EventStore
 from nexus_router.plugins import AdapterLoadError, get_adapter_metadata, load_adapter
 from nexus_router.router import Router
-
 
 # Add fixtures directory to path for testing
 FIXTURES_DIR = Path(__file__).parent / "fixtures"

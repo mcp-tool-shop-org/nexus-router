@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
-from typing import Any, Dict, List
+from typing import Any
 
 
 def sha256_canonical(obj: Any) -> str:
@@ -12,8 +12,8 @@ def sha256_canonical(obj: Any) -> str:
 
 
 def build_provenance_bundle(
-    *, run_id: str, request: Dict[str, Any], results: List[Dict[str, Any]]
-) -> Dict[str, Any]:
+    *, run_id: str, request: dict[str, Any], results: list[dict[str, Any]]
+) -> dict[str, Any]:
     digest = sha256_canonical({"request": request, "results": results})
     return {
         "provenance": {

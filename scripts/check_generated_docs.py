@@ -9,7 +9,8 @@ Usage:
     python scripts/check_generated_docs.py
 
 In CI:
-    python scripts/check_generated_docs.py || (echo "Docs are stale. Run: python -c 'from nexus_router.docs import generate_adapter_docs; ...'"; exit 1)
+    python scripts/check_generated_docs.py || \
+        (echo "Docs are stale. Regenerate them."; exit 1)
 """
 
 from __future__ import annotations
@@ -32,7 +33,7 @@ def main() -> int:
     # Check if file exists
     if not docs_file.exists():
         print("ERROR: ADAPTERS.generated.md does not exist", file=sys.stderr)
-        print("Run: python -c \"from nexus_router.docs import generate_adapter_docs; ...")
+        print('Run: python -c "from nexus_router.docs import generate_adapter_docs; ...')
         return 1
 
     # Read existing content
@@ -57,7 +58,12 @@ def main() -> int:
         print("ERROR: ADAPTERS.generated.md is out of date", file=sys.stderr)
         print()
         print("To regenerate, run:")
-        print('  python -c "from nexus_router.docs import generate_adapter_docs; open(\'ADAPTERS.generated.md\', \'w\').write(generate_adapter_docs().markdown)"')
+        print(
+            '  python -c "from nexus_router.docs import'
+            " generate_adapter_docs; "
+            "open('ADAPTERS.generated.md', 'w')"
+            '.write(generate_adapter_docs().markdown)"'
+        )
         print()
 
         # Show diff summary

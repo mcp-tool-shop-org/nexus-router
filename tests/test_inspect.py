@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from importlib import resources
 from pathlib import Path
-from typing import Any, Dict, cast
+from typing import Any, cast
 
 import jsonschema
 import pytest
@@ -13,11 +13,11 @@ import pytest
 from nexus_router.tool import inspect, run
 
 
-def _load_schema(name: str) -> Dict[str, Any]:
-    with resources.files("nexus_router").joinpath(f"schemas/{name}").open(
-        "r", encoding="utf-8"
-    ) as f:
-        return cast(Dict[str, Any], json.load(f))
+def _load_schema(name: str) -> dict[str, Any]:
+    with (
+        resources.files("nexus_router").joinpath(f"schemas/{name}").open("r", encoding="utf-8") as f
+    ):
+        return cast(dict[str, Any], json.load(f))
 
 
 INSPECT_REQUEST_SCHEMA = _load_schema("nexus-router.inspect.request.v0.2.json")
@@ -163,9 +163,7 @@ class TestInspectGoldenFixtures:
         db_path = str(tmp_path / "test.db")
 
         # Create two runs
-        resp1 = run(
-            {"goal": "run1", "mode": "dry_run", "plan_override": []}, db_path=db_path
-        )
+        resp1 = run({"goal": "run1", "mode": "dry_run", "plan_override": []}, db_path=db_path)
         run({"goal": "run2", "mode": "dry_run", "plan_override": []}, db_path=db_path)
 
         run_id = resp1["run"]["run_id"]

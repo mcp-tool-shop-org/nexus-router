@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, cast
+from typing import Any, cast
 
 import jsonschema
 
 
-def load_schema(path: str | Path) -> Dict[str, Any]:
+def load_schema(path: str | Path) -> dict[str, Any]:
     p = Path(path)
-    return cast(Dict[str, Any], json.loads(p.read_text(encoding="utf-8")))
+    return cast(dict[str, Any], json.loads(p.read_text(encoding="utf-8")))
 
 
-def validate(instance: Dict[str, Any], schema: Dict[str, Any]) -> None:
+def validate(instance: dict[str, Any], schema: dict[str, Any]) -> None:
     jsonschema.validate(instance=instance, schema=schema)

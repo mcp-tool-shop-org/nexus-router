@@ -4,18 +4,18 @@ from __future__ import annotations
 
 import json
 from importlib import resources
-from typing import Any, Dict, cast
+from typing import Any, cast
 
 import jsonschema
 
 from nexus_router.tool import run
 
 
-def _load_schema(name: str) -> Dict[str, Any]:
-    with resources.files("nexus_router").joinpath(f"schemas/{name}").open(
-        "r", encoding="utf-8"
-    ) as f:
-        return cast(Dict[str, Any], json.load(f))
+def _load_schema(name: str) -> dict[str, Any]:
+    with (
+        resources.files("nexus_router").joinpath(f"schemas/{name}").open("r", encoding="utf-8") as f
+    ):
+        return cast(dict[str, Any], json.load(f))
 
 
 REQUEST_SCHEMA = _load_schema("nexus-router.run.request.v0.7.json")

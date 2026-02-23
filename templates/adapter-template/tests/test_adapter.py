@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-import pytest
-
 # TODO: Replace with your actual package name
 from nexus_router_adapter_example import (
     ADAPTER_KIND,
     ADAPTER_MANIFEST,
     DEFAULT_CAPABILITIES,
-    ExampleAdapter,
     create_adapter,
 )
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from . import events as E
 
@@ -11,12 +11,12 @@ from . import events as E
 def inspect(
     *,
     db_path: str,
-    run_id: Optional[str] = None,
-    status: Optional[str] = None,
+    run_id: str | None = None,
+    status: str | None = None,
     limit: int = 50,
     offset: int = 0,
-    since: Optional[str] = None,
-) -> Dict[str, Any]:
+    since: str | None = None,
+) -> dict[str, Any]:
     """
     Inspect the event store and return run summaries.
 
@@ -35,8 +35,8 @@ def inspect(
     conn.row_factory = sqlite3.Row
     try:
         # Build WHERE clause
-        conditions: List[str] = []
-        params: List[Any] = []
+        conditions: list[str] = []
+        params: list[Any] = []
 
         if run_id is not None:
             conditions.append("r.run_id = ?")
@@ -81,10 +81,10 @@ def inspect(
             ORDER BY created_at DESC
             LIMIT ? OFFSET ?
         """
-        runs_params = params + [limit, offset]
+        runs_params = [*params, limit, offset]
         run_rows = conn.execute(runs_sql, runs_params).fetchall()
 
-        runs: List[Dict[str, Any]] = []
+        runs: list[dict[str, Any]] = []
         for row in run_rows:
             run_summary = _build_run_summary(conn, dict(row))
             runs.append(run_summary)
@@ -98,7 +98,7 @@ def inspect(
         conn.close()
 
 
-def _build_run_summary(conn: sqlite3.Connection, run_row: Dict[str, Any]) -> Dict[str, Any]:
+def _build_run_summary(conn: sqlite3.Connection, run_row: dict[str, Any]) -> dict[str, Any]:
     """Build a summary for a single run from its events."""
     run_id = run_row["run_id"]
 
@@ -110,9 +110,9 @@ def _build_run_summary(conn: sqlite3.Connection, run_row: Dict[str, Any]) -> Dic
 
     steps_planned = 0
     steps_executed = 0
-    tools_used: List[str] = []
-    outcome: Optional[str] = None
-    last_failure_reason: Optional[str] = None
+    tools_used: list[str] = []
+    outcome: str | None = None
+    last_failure_reason: str | None = None
 
     import json
 

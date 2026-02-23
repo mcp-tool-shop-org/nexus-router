@@ -12,14 +12,16 @@ def test_apply_allowed_succeeds():
     adapter.set_response("t", "m", {"result": "applied"})
     router = Router(store, adapter=adapter)
 
-    resp = router.run({
-        "mode": "apply",
-        "goal": "test",
-        "policy": {"allow_apply": True},
-        "plan_override": [
-            {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}
-        ],
-    })
+    resp = router.run(
+        {
+            "mode": "apply",
+            "goal": "test",
+            "policy": {"allow_apply": True},
+            "plan_override": [
+                {"step_id": "s1", "intent": "x", "call": {"tool": "t", "method": "m", "args": {}}}
+            ],
+        }
+    )
 
     run_id = resp["run"]["run_id"]
     types = [e.type for e in store.read_events(run_id)]

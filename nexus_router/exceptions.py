@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class NexusError(Exception):
@@ -34,7 +34,7 @@ class NexusOperationalError(NexusError):
         message: str,
         *,
         error_code: str = "OPERATIONAL_ERROR",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message)
         self.error_code = error_code
@@ -64,7 +64,7 @@ class NexusBugError(NexusError):
         message: str,
         *,
         error_code: str = "BUG_ERROR",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message)
         self.error_code = error_code

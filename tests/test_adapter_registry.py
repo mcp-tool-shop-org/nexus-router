@@ -132,9 +132,7 @@ class TestAdapterRegistryListing:
         registry = AdapterRegistry()
         registry.register(FakeAdapter(adapter_id="fake1"))
         registry.register(
-            FakeAdapter(
-                adapter_id="fake2", capabilities=frozenset({CAPABILITY_DRY_RUN})
-            )
+            FakeAdapter(adapter_id="fake2", capabilities=frozenset({CAPABILITY_DRY_RUN}))
         )
         registry.register(NullAdapter(adapter_id="null1"))
 

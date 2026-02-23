@@ -7,8 +7,7 @@ nexus_router.plugins.load_adapter() mechanism.
 
 from __future__ import annotations
 
-from typing import Any, Dict, FrozenSet, Optional
-
+from typing import Any
 
 # Optional metadata
 ADAPTER_KIND = "toy"
@@ -46,7 +45,7 @@ class ToyAdapter:
         *,
         adapter_id: str = "toy",
         prefix: str = "toy",
-        capabilities: Optional[FrozenSet[str]] = None,
+        capabilities: frozenset[str] | None = None,
     ) -> None:
         self._adapter_id = adapter_id
         self._prefix = prefix
@@ -61,10 +60,10 @@ class ToyAdapter:
         return ADAPTER_KIND
 
     @property
-    def capabilities(self) -> FrozenSet[str]:
+    def capabilities(self) -> frozenset[str]:
         return self._capabilities
 
-    def call(self, tool: str, method: str, args: Dict[str, Any]) -> Dict[str, Any]:
+    def call(self, tool: str, method: str, args: dict[str, Any]) -> dict[str, Any]:
         """Return a response with the configured prefix."""
         return {
             "prefix": self._prefix,
@@ -77,9 +76,9 @@ class ToyAdapter:
 
 def create_adapter(
     *,
-    adapter_id: Optional[str] = None,
+    adapter_id: str | None = None,
     prefix: str = "default",
-    capabilities: Optional[FrozenSet[str]] = None,
+    capabilities: frozenset[str] | None = None,
 ) -> ToyAdapter:
     """
     Factory function for creating ToyAdapter instances.

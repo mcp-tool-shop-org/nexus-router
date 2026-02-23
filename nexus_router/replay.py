@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from . import events as E
 
@@ -16,11 +16,11 @@ class Violation:
 
     code: str
     message: str
-    seq: Optional[int] = None
-    event_id: Optional[str] = None
+    seq: int | None = None
+    event_id: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
-        result: Dict[str, Any] = {"code": self.code, "message": self.message}
+    def to_dict(self) -> dict[str, Any]:
+        result: dict[str, Any] = {"code": self.code, "message": self.message}
         if self.seq is not None:
             result["seq"] = self.seq
         if self.event_id is not None:
@@ -33,13 +33,13 @@ class StepTimeline:
     """Timeline for a single step."""
 
     step_id: str
-    started_seq: Optional[int] = None
-    completed_seq: Optional[int] = None
-    tool_call_requested_seq: Optional[int] = None
-    tool_call_result_seq: Optional[int] = None
-    status: Optional[str] = None
+    started_seq: int | None = None
+    completed_seq: int | None = None
+    tool_call_requested_seq: int | None = None
+    tool_call_result_seq: int | None = None
+    status: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "step_id": self.step_id,
             "started_seq": self.started_seq,
@@ -55,16 +55,16 @@ class RunView:
     """Reconstructed view of a run from events."""
 
     run_id: str
-    status: Optional[str] = None
-    outcome: Optional[str] = None
-    mode: Optional[str] = None
-    goal: Optional[str] = None
-    steps: Dict[str, StepTimeline] = field(default_factory=dict)
-    tools_used: List[str] = field(default_factory=list)
+    status: str | None = None
+    outcome: str | None = None
+    mode: str | None = None
+    goal: str | None = None
+    steps: dict[str, StepTimeline] = field(default_factory=dict)
+    tools_used: list[str] = field(default_factory=list)
     provenance_present: bool = False
-    terminal_event_type: Optional[str] = None
+    terminal_event_type: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "run_id": self.run_id,
             "status": self.status,
@@ -83,7 +83,7 @@ def replay(
     db_path: str,
     run_id: str,
     strict: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Replay a run from events and check invariants.
 
@@ -108,9 +108,7 @@ def replay(
             return {
                 "ok": False,
                 "run_view": None,
-                "violations": [
-                    {"code": "RUN_NOT_FOUND", "message": f"Run {run_id} not found"}
-                ],
+                "violations": [{"code": "RUN_NOT_FOUND", "message": f"Run {run_id} not found"}],
             }
 
         # Get all events ordered by seq
@@ -126,7 +124,7 @@ def replay(
             mode=run_row["mode"],
             goal=run_row["goal"],
         )
-        violations: List[Violation] = []
+        violations: list[Violation] = []
 
         # Check invariants as we replay
         _replay_events(event_rows, run_view, violations)
@@ -144,9 +142,9 @@ def replay(
 
 
 def _replay_events(
-    event_rows: List[sqlite3.Row],
+    event_rows: list[sqlite3.Row],
     run_view: RunView,
-    violations: List[Violation],
+    violations: list[Violation],
 ) -> None:
     """Replay events and check invariants."""
 
@@ -158,8 +156,8 @@ def _replay_events(
     seen_run_started = False
     seen_plan_created = False
     seen_terminal = False
-    prev_seq: Optional[int] = None
-    active_steps: Dict[str, int] = {}  # step_id -> started_seq
+    prev_seq: int | None = None
+    active_steps: dict[str, int] = {}  # step_id -> started_seq
 
     for row in event_rows:
         event_id = row["event_id"]
@@ -304,14 +302,10 @@ def _replay_events(
 
     # Final invariant checks
     if not seen_run_started:
-        violations.append(
-            Violation(code="NO_RUN_STARTED", message="RUN_STARTED event not found")
-        )
+        violations.append(Violation(code="NO_RUN_STARTED", message="RUN_STARTED event not found"))
 
     if not seen_plan_created:
-        violations.append(
-            Violation(code="NO_PLAN_CREATED", message="PLAN_CREATED event not found")
-        )
+        violations.append(Violation(code="NO_PLAN_CREATED", message="PLAN_CREATED event not found"))
 
     if not seen_terminal:
         violations.append(

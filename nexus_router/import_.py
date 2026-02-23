@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .export import _compute_bundle_digest
 from .replay import replay as _replay_impl
@@ -14,12 +14,12 @@ from .replay import replay as _replay_impl
 def import_bundle(
     *,
     db_path: str,
-    bundle: Dict[str, Any],
+    bundle: dict[str, Any],
     mode: str = "reject_on_conflict",
-    new_run_id: Optional[str] = None,
+    new_run_id: str | None = None,
     verify_digest: bool = True,
     replay_after_import: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Import a bundle into a database safely.
 
@@ -150,7 +150,7 @@ def import_bundle(
 
         conn.commit()
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "status": "ok",
             "imported_run_id": target_run_id,
             "events_inserted": events_inserted,
@@ -173,7 +173,7 @@ def import_bundle(
         conn.close()
 
 
-def _validate_bundle_structure(bundle: Dict[str, Any]) -> Optional[str]:
+def _validate_bundle_structure(bundle: dict[str, Any]) -> str | None:
     """Validate required bundle fields."""
     if "bundle_version" not in bundle:
         return "Missing bundle_version"
@@ -197,7 +197,7 @@ def _validate_bundle_structure(bundle: Dict[str, Any]) -> Optional[str]:
     return None
 
 
-def _verify_digest(bundle: Dict[str, Any]) -> Optional[str]:
+def _verify_digest(bundle: dict[str, Any]) -> str | None:
     """Verify bundle digest."""
     if "digests" not in bundle or "sha256" not in bundle["digests"]:
         return "Bundle missing digests.sha256"
@@ -212,15 +212,15 @@ def _verify_digest(bundle: Dict[str, Any]) -> Optional[str]:
 
 
 def _remap_run_id_in_payload(
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
     old_run_id: str,
     new_run_id: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Recursively remap run_id references in payload."""
     if not isinstance(payload, dict):
         return payload
 
-    result: Dict[str, Any] = {}
+    result: dict[str, Any] = {}
     for key, value in payload.items():
         if key == "run_id" and value == old_run_id:
             result[key] = new_run_id
@@ -229,7 +229,8 @@ def _remap_run_id_in_payload(
         elif isinstance(value, list):
             remapped: list[Any] = [
                 _remap_run_id_in_payload(item, old_run_id, new_run_id)
-                if isinstance(item, dict) else item
+                if isinstance(item, dict)
+                else item
                 for item in value
             ]
             result[key] = remapped

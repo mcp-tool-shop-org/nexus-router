@@ -1,17 +1,17 @@
 __all__ = [
-    "tool",
-    "router",
+    "dispatch",
     "event_store",
-    "provenance",
-    "policy",
     "events",
-    "schema",
-    "inspect",
-    "replay",
+    "exceptions",
     "export",
     "import_",
-    "dispatch",
-    "exceptions",
+    "inspect",
     "plugins",
+    "policy",
+    "provenance",
+    "replay",
+    "router",
+    "schema",
+    "tool",
 ]
-__version__ = "1.0.0"
+__version__ = "1.1.0"

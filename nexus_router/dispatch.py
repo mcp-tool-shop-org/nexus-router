@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import errno
 import hashlib
 import json
@@ -11,10 +12,10 @@ import stat
 import subprocess
 import tempfile
 import time
-from typing import Any, Callable, Dict, FrozenSet, List, Optional, Protocol, Tuple
+from collections.abc import Callable
+from typing import Any, Protocol
 
 from .exceptions import NexusBugError, NexusOperationalError
-
 
 # Standard capability constants
 CAPABILITY_DRY_RUN = "dry_run"  # Adapter supports dry_run mode (simulated output)
@@ -28,7 +29,7 @@ _SENSITIVE_KEY_PATTERN = re.compile(
 )
 
 
-def default_redact_args(args: Dict[str, Any]) -> Dict[str, Any]:
+def default_redact_args(args: dict[str, Any]) -> dict[str, Any]:
     """
     Default redaction function for args.
 
@@ -107,7 +108,7 @@ class DispatchAdapter(Protocol):
         ...
 
     @property
-    def capabilities(self) -> FrozenSet[str]:
+    def capabilities(self) -> frozenset[str]:
         """
         Declared capabilities of this adapter.
 
@@ -119,7 +120,7 @@ class DispatchAdapter(Protocol):
         """
         ...
 
-    def call(self, tool: str, method: str, args: Dict[str, Any]) -> Dict[str, Any]:
+    def call(self, tool: str, method: str, args: dict[str, Any]) -> dict[str, Any]:
         """
         Execute a tool call.
 
@@ -161,7 +162,7 @@ class AdapterRegistry:
         Args:
             default_adapter_id: Adapter to use when none specified in request.
         """
-        self._adapters: Dict[str, DispatchAdapter] = {}
+        self._adapters: dict[str, DispatchAdapter] = {}
         self._default_adapter_id = default_adapter_id
 
     @property
@@ -205,11 +206,11 @@ class AdapterRegistry:
         """Get the default adapter."""
         return self.get(self._default_adapter_id)
 
-    def list_ids(self) -> List[str]:
+    def list_ids(self) -> list[str]:
         """List all registered adapter IDs (sorted)."""
         return sorted(self._adapters.keys())
 
-    def list_adapters(self) -> List[Dict[str, Any]]:
+    def list_adapters(self) -> list[dict[str, Any]]:
         """
         List all registered adapters with metadata.
 
@@ -222,12 +223,10 @@ class AdapterRegistry:
                 "adapter_kind": adapter.adapter_kind,
                 "capabilities": sorted(adapter.capabilities),
             }
-            for adapter in sorted(
-                self._adapters.values(), key=lambda a: a.adapter_id
-            )
+            for adapter in sorted(self._adapters.values(), key=lambda a: a.adapter_id)
         ]
 
-    def find_by_capability(self, capability: str) -> List[str]:
+    def find_by_capability(self, capability: str) -> list[str]:
         """
         Find adapters with a specific capability.
 
@@ -303,7 +302,7 @@ class NullAdapter:
 
     def __init__(self, adapter_id: str = "null") -> None:
         self._adapter_id = adapter_id
-        self._capabilities: FrozenSet[str] = frozenset({CAPABILITY_DRY_RUN})
+        self._capabilities: frozenset[str] = frozenset({CAPABILITY_DRY_RUN})
 
     @property
     def adapter_id(self) -> str:
@@ -314,10 +313,10 @@ class NullAdapter:
         return "null"
 
     @property
-    def capabilities(self) -> FrozenSet[str]:
+    def capabilities(self) -> frozenset[str]:
         return self._capabilities
 
-    def call(self, tool: str, method: str, args: Dict[str, Any]) -> Dict[str, Any]:
+    def call(self, tool: str, method: str, args: dict[str, Any]) -> dict[str, Any]:
         """Return a deterministic placeholder result."""
         return {
             "simulated": True,
@@ -341,15 +340,15 @@ class FakeAdapter:
     def __init__(
         self,
         adapter_id: str = "fake",
-        capabilities: Optional[FrozenSet[str]] = None,
+        capabilities: frozenset[str] | None = None,
     ) -> None:
         self._adapter_id = adapter_id
-        self._capabilities: FrozenSet[str] = capabilities or frozenset(
+        self._capabilities: frozenset[str] = capabilities or frozenset(
             {CAPABILITY_DRY_RUN, CAPABILITY_APPLY}
         )
-        self._responses: Dict[Tuple[str, str], Callable[..., Dict[str, Any]]] = {}
-        self._default_response: Optional[Callable[..., Dict[str, Any]]] = None
-        self._call_log: list[Dict[str, Any]] = []
+        self._responses: dict[tuple[str, str], Callable[..., dict[str, Any]]] = {}
+        self._default_response: Callable[..., dict[str, Any]] | None = None
+        self._call_log: list[dict[str, Any]] = []
 
     @property
     def adapter_id(self) -> str:
@@ -360,11 +359,11 @@ class FakeAdapter:
         return "fake"
 
     @property
-    def capabilities(self) -> FrozenSet[str]:
+    def capabilities(self) -> frozenset[str]:
         return self._capabilities
 
     @property
-    def call_log(self) -> list[Dict[str, Any]]:
+    def call_log(self) -> list[dict[str, Any]]:
         """Log of all calls made to this adapter."""
         return self._call_log
 
@@ -372,7 +371,7 @@ class FakeAdapter:
         self,
         tool: str,
         method: str,
-        response: Dict[str, Any] | Callable[[Dict[str, Any]], Dict[str, Any]],
+        response: dict[str, Any] | Callable[[dict[str, Any]], dict[str, Any]],
     ) -> None:
         """
         Set the response for a specific (tool, method) combination.
@@ -390,7 +389,7 @@ class FakeAdapter:
 
     def set_default_response(
         self,
-        response: Dict[str, Any] | Callable[[str, str, Dict[str, Any]], Dict[str, Any]],
+        response: dict[str, Any] | Callable[[str, str, dict[str, Any]], dict[str, Any]],
     ) -> None:
         """
         Set the default response for unregistered (tool, method) combinations.
@@ -413,7 +412,7 @@ class FakeAdapter:
     ) -> None:
         """Configure a specific call to raise NexusOperationalError."""
 
-        def raise_error(_args: Dict[str, Any]) -> Dict[str, Any]:
+        def raise_error(_args: dict[str, Any]) -> dict[str, Any]:
             raise NexusOperationalError(message, error_code=error_code)
 
         self._responses[(tool, method)] = raise_error
@@ -427,12 +426,12 @@ class FakeAdapter:
     ) -> None:
         """Configure a specific call to raise NexusBugError."""
 
-        def raise_error(_args: Dict[str, Any]) -> Dict[str, Any]:
+        def raise_error(_args: dict[str, Any]) -> dict[str, Any]:
             raise NexusBugError(message, error_code=error_code)
 
         self._responses[(tool, method)] = raise_error
 
-    def call(self, tool: str, method: str, args: Dict[str, Any]) -> Dict[str, Any]:
+    def call(self, tool: str, method: str, args: dict[str, Any]) -> dict[str, Any]:
         """Execute the configured response."""
         # Log the call
         self._call_log.append({"tool": tool, "method": method, "args": args})
@@ -491,21 +490,21 @@ class SubprocessAdapter:
     """
 
     # Callable type aliases for redaction hooks
-    RedactArgsFunc = Callable[[Dict[str, Any]], Dict[str, Any]]
+    RedactArgsFunc = Callable[[dict[str, Any]], dict[str, Any]]
     RedactTextFunc = Callable[[str], str]
 
     def __init__(
         self,
-        base_cmd: List[str],
+        base_cmd: list[str],
         *,
-        adapter_id: Optional[str] = None,
+        adapter_id: str | None = None,
         timeout_s: float = 30.0,
-        cwd: Optional[str] = None,
-        env: Optional[Dict[str, str]] = None,
+        cwd: str | None = None,
+        env: dict[str, str] | None = None,
         max_stdout_chars: int = 200_000,
         max_stderr_chars: int = 50_000,
-        redact_args: Optional[RedactArgsFunc] = None,
-        redact_text: Optional[RedactTextFunc] = None,
+        redact_args: RedactArgsFunc | None = None,
+        redact_text: RedactTextFunc | None = None,
         cleanup_retry_delay_s: float = 0.1,
         strict_stderr: bool = False,
     ) -> None:
@@ -539,7 +538,7 @@ class SubprocessAdapter:
         self._max_stderr_chars = max_stderr_chars
         self._cleanup_retry_delay_s = cleanup_retry_delay_s
         self._strict_stderr = strict_stderr
-        self._capabilities: FrozenSet[str] = frozenset(
+        self._capabilities: frozenset[str] = frozenset(
             {CAPABILITY_APPLY, CAPABILITY_TIMEOUT, CAPABILITY_EXTERNAL}
         )
 
@@ -577,7 +576,7 @@ class SubprocessAdapter:
         return "subprocess"
 
     @property
-    def capabilities(self) -> FrozenSet[str]:
+    def capabilities(self) -> frozenset[str]:
         return self._capabilities
 
     @property
@@ -585,7 +584,7 @@ class SubprocessAdapter:
         """True if the last temp file cleanup failed (diagnostic)."""
         return self._last_cleanup_failed
 
-    def redact_args_for_event(self, args: Dict[str, Any]) -> Dict[str, Any]:
+    def redact_args_for_event(self, args: dict[str, Any]) -> dict[str, Any]:
         """Apply redaction to args for event storage."""
         return self._redact_args(args)
 
@@ -593,7 +592,7 @@ class SubprocessAdapter:
         """Apply redaction to text for event storage."""
         return self._redact_text(text)
 
-    def call(self, tool: str, method: str, args: Dict[str, Any]) -> Dict[str, Any]:
+    def call(self, tool: str, method: str, args: dict[str, Any]) -> dict[str, Any]:
         """
         Execute a tool call via subprocess.
 
@@ -620,12 +619,10 @@ class SubprocessAdapter:
         base_details = self._base_error_details(args_digest)
 
         # Write payload to temp file
-        args_file_path: Optional[str] = None
+        args_file_path: str | None = None
         try:
             # Create temp file with identifiable prefix
-            fd, args_file_path = tempfile.mkstemp(
-                suffix=".json", prefix="nexus-router-args-"
-            )
+            fd, args_file_path = tempfile.mkstemp(suffix=".json", prefix="nexus-router-args-")
             try:
                 os.write(fd, payload_json.encode("utf-8"))
             finally:
@@ -635,14 +632,14 @@ class SubprocessAdapter:
             self._secure_temp_file(args_file_path)
 
             # Build command
-            cmd = self._base_cmd + ["call", tool, method, "--json-args-file", args_file_path]
+            cmd = [*self._base_cmd, "call", tool, method, "--json-args-file", args_file_path]
 
             # Validate cwd if specified
             if self._cwd is not None:
                 self._validate_cwd(self._cwd)
 
             # Prepare environment
-            run_env: Optional[Dict[str, str]] = None
+            run_env: dict[str, str] | None = None
             if self._env is not None:
                 self._validate_env(self._env)
                 run_env = {**os.environ, **self._env}
@@ -669,19 +666,19 @@ class SubprocessAdapter:
                     details["cwd"] = self._cwd
                 # Capture any partial output (may be None or bytes)
                 if e.stdout is not None:
-                    stdout_str = e.stdout if isinstance(e.stdout, str) else e.stdout.decode(
-                        "utf-8", errors="replace"
+                    stdout_str = (
+                        e.stdout
+                        if isinstance(e.stdout, str)
+                        else e.stdout.decode("utf-8", errors="replace")
                     )
-                    details["stdout_excerpt"] = self._redact_text(
-                        self._truncate_stdout(stdout_str)
-                    )
+                    details["stdout_excerpt"] = self._redact_text(self._truncate_stdout(stdout_str))
                 if e.stderr is not None:
-                    stderr_str = e.stderr if isinstance(e.stderr, str) else e.stderr.decode(
-                        "utf-8", errors="replace"
+                    stderr_str = (
+                        e.stderr
+                        if isinstance(e.stderr, str)
+                        else e.stderr.decode("utf-8", errors="replace")
                     )
-                    details["stderr_excerpt"] = self._redact_text(
-                        self._truncate_stderr(stderr_str)
-                    )
+                    details["stderr_excerpt"] = self._redact_text(self._truncate_stderr(stderr_str))
                 raise NexusOperationalError(
                     f"Command timed out after {self._timeout_s}s",
                     error_code="TIMEOUT",
@@ -774,22 +771,20 @@ class SubprocessAdapter:
             if args_file_path is not None:
                 self._cleanup_temp_file(args_file_path)
 
-    def _compute_args_digest(self, args: Dict[str, Any]) -> str:
+    def _compute_args_digest(self, args: dict[str, Any]) -> str:
         """Compute SHA256 digest of canonical args JSON (first 12 hex chars)."""
         canonical = json.dumps(args, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(canonical.encode()).hexdigest()[:12]
 
-    def _base_error_details(self, args_digest: str) -> Dict[str, Any]:
+    def _base_error_details(self, args_digest: str) -> dict[str, Any]:
         """Build common error details included in all operational errors."""
         return {"args_digest": args_digest}
 
     def _secure_temp_file(self, path: str) -> None:
         """Set restrictive permissions on temp file (POSIX only, best-effort)."""
         if os.name == "posix":
-            try:
+            with contextlib.suppress(OSError):
                 os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)  # 0o600
-            except OSError:
-                pass  # Best effort
 
     def _validate_cwd(self, cwd: str) -> None:
         """Validate working directory exists and is a directory."""
@@ -804,7 +799,7 @@ class SubprocessAdapter:
                 error_code="CWD_NOT_DIRECTORY",
             )
 
-    def _validate_env(self, env: Dict[str, str]) -> None:
+    def _validate_env(self, env: dict[str, str]) -> None:
         """Validate environment variables are all strings."""
         for key, value in env.items():
             if not isinstance(key, str) or not isinstance(value, str):
@@ -855,7 +850,7 @@ class SubprocessAdapter:
 
     def _excerpt_head_tail(
         self, text: str, head: int = 500, tail: int = 200
-    ) -> Tuple[str, Optional[str]]:
+    ) -> tuple[str, str | None]:
         """
         Extract head and tail excerpts from text.
 

@@ -41,7 +41,7 @@ def main() -> int:
 
     # Read payload from file
     try:
-        with open(args.json_args_file, "r", encoding="utf-8") as f:
+        with open(args.json_args_file, encoding="utf-8") as f:
             payload = json.load(f)
     except (OSError, json.JSONDecodeError) as e:
         print(json.dumps({"error": f"Failed to read args file: {e}"}))

@@ -8,11 +8,9 @@ from nexus_router import events as E
 from nexus_router.dispatch import (
     CAPABILITY_APPLY,
     CAPABILITY_DRY_RUN,
-    CAPABILITY_TIMEOUT,
     AdapterRegistry,
     FakeAdapter,
     NullAdapter,
-    SubprocessAdapter,
 )
 from nexus_router.event_store import EventStore
 from nexus_router.router import Router
@@ -206,7 +204,7 @@ class TestUnknownAdapterFails:
         # Error message should include available adapters
         run_id = resp["run"]["run_id"]
         events = store.read_events(run_id)
-        failed = [e for e in events if e.type == E.RUN_FAILED][0]
+        failed = next(e for e in events if e.type == E.RUN_FAILED)
         assert set(failed.payload["details"]["available_adapters"]) == {"a", "b"}
 
 
@@ -268,7 +266,7 @@ class TestRequireCapabilitiesEnforced:
 
         run_id = resp["run"]["run_id"]
         events = store.read_events(run_id)
-        failed = [e for e in events if e.type == E.RUN_FAILED][0]
+        failed = next(e for e in events if e.type == E.RUN_FAILED)
         assert failed.payload["error_code"] == "CAPABILITY_MISSING"
 
     def test_require_capabilities_multiple(self) -> None:

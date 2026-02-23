@@ -5,8 +5,8 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 BUNDLE_VERSION = "0.3"
 
@@ -16,7 +16,7 @@ def export_run(
     db_path: str,
     run_id: str,
     include_provenance: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Export a run as a deterministic, portable bundle.
 
@@ -51,7 +51,7 @@ def export_run(
         ).fetchall()
 
         # Build canonical run object
-        run_data: Dict[str, Any] = {
+        run_data: dict[str, Any] = {
             "run_id": run_row["run_id"],
             "mode": run_row["mode"],
             "goal": run_row["goal"],
@@ -60,16 +60,18 @@ def export_run(
         }
 
         # Build canonical events list
-        events_data: List[Dict[str, Any]] = []
+        events_data: list[dict[str, Any]] = []
         for row in event_rows:
-            events_data.append({
-                "event_id": row["event_id"],
-                "run_id": row["run_id"],
-                "seq": row["seq"],
-                "type": row["type"],
-                "payload": json.loads(row["payload_json"]),
-                "ts": row["ts"],
-            })
+            events_data.append(
+                {
+                    "event_id": row["event_id"],
+                    "run_id": row["run_id"],
+                    "seq": row["seq"],
+                    "type": row["type"],
+                    "payload": json.loads(row["payload_json"]),
+                    "ts": row["ts"],
+                }
+            )
 
         # Compute deterministic digest over {run, events} only
         # Using canonical JSON with sorted keys for reproducibility
@@ -81,9 +83,9 @@ def export_run(
         sha256_digest = hashlib.sha256(digest_json.encode("utf-8")).hexdigest()
 
         # Build bundle
-        exported_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+        exported_at = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 
-        artifact: Dict[str, Any] = {
+        artifact: dict[str, Any] = {
             "bundle_version": BUNDLE_VERSION,
             "exported_at": exported_at,
             "run": run_data,
@@ -108,7 +110,7 @@ def export_run(
         conn.close()
 
 
-def _compute_bundle_digest(bundle: Dict[str, Any]) -> str:
+def _compute_bundle_digest(bundle: dict[str, Any]) -> str:
     """Recompute SHA256 digest for a bundle's {run, events}."""
     digest_content = {
         "run": bundle["run"],
@@ -118,7 +120,7 @@ def _compute_bundle_digest(bundle: Dict[str, Any]) -> str:
     return hashlib.sha256(digest_json.encode("utf-8")).hexdigest()
 
 
-def verify_bundle_digest(bundle: Dict[str, Any]) -> Optional[str]:
+def verify_bundle_digest(bundle: dict[str, Any]) -> str | None:
     """
     Verify a bundle's digest.
 
