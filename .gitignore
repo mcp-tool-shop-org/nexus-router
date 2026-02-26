@@ -74,3 +74,6 @@ venv.bak/
 # OS files
 .DS_Store
 Thumbs.db
+site/.astro/
+site/node_modules/
+.polyglot-cache.json
