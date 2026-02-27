@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="README.md">English</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
+  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
 </p>
 
 <p align="center">
@@ -9,6 +9,7 @@
 <p align="center">
   <a href="https://github.com/mcp-tool-shop-org/nexus-router/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/nexus-router/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://pypi.org/project/nexus-router/"><img src="https://img.shields.io/pypi/v/nexus-router" alt="PyPI" /></a>
+  <a href="https://codecov.io/gh/mcp-tool-shop-org/nexus-router"><img src="https://img.shields.io/codecov/c/github/mcp-tool-shop-org/nexus-router" alt="Coverage" /></a>
   <a href="https://github.com/mcp-tool-shop-org/nexus-router/blob/main/LICENSE"><img src="https://img.shields.io/github/license/mcp-tool-shop-org/nexus-router" alt="License: MIT" /></a>
   <a href="https://pypi.org/project/nexus-router/"><img src="https://img.shields.io/pypi/pyversions/nexus-router" alt="Python versions" /></a>
   <a href="https://mcp-tool-shop-org.github.io/nexus-router/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page" /></a>
@@ -30,7 +31,7 @@
 ## ブランド + ツールID
 
 | キー | 値 |
-| ----- | ------- |
+|-----|-------|
 | ブランド / リポジトリ | `nexus-router` |
 | Pythonパッケージ | `nexus_router` |
 | MCPツールID | `nexus-router.run` |
@@ -74,7 +75,7 @@ resp = run({"goal": "demo"}, db_path="nexus-router.db")
 
 ## 移植性 (v0.3以降)
 
-実行結果を移植可能な形式でエクスポートし、他のデータベースにインポートできます。
+実行結果をポータブルなバンドルとしてエクスポートし、他のデータベースにインポートできます。
 
 ```python
 from nexus_router.tool import run, export, import_bundle, replay
@@ -112,7 +113,7 @@ print(result["ok"])          # True if no violations
 print(result["violations"])  # [] or list of issues
 ```
 
-## アダプターの実行 (v0.4以降)
+## アダプターのディスパッチ (v0.4以降)
 
 アダプターは、ツールの呼び出しを実行します。`run()` にアダプターを渡します。
 
@@ -156,12 +157,12 @@ resp = run({
 - `NullAdapter`：シミュレートされた出力を返します（デフォルト、`dry_run`で使用）。
 - `FakeAdapter`：テスト用の設定可能な応答。
 
-## このバージョンの内容（と、そうでないもの）
+## このバージョンとは何か、そして何ではないのか
 
-v1.1 は、完全なアダプターエコシステム（16モジュール、346テスト）を備えた、プラットフォームグレードのイベント駆動型ルーターです。
+v1.1 は、完全なアダプターエコシステム（16のモジュール、346のテスト）を備えた、**プラットフォームグレード**のイベント駆動型ルーターです。
 
 **コアルーター:**
-- モノトニックシーケンスを持つイベントログ
+- 単調シーケンスを持つイベントログ
 - ポリシーゲート (`allow_apply`, `max_steps`)
 - すべてのリクエストに対するスキーマ検証
 - SHA256ダイジェストを持つプロビナンスバンドル
@@ -179,16 +180,16 @@ v1.1 は、完全なアダプターエコシステム（16モジュール、346�
 
 ## 並行処理
 
-1つの実行につき、単一の書き込み元のみを許可します。同じ `run_id` への同時書き込みはサポートされていません。
+1つの実行につき、単一の書き込み元。同じ `run_id` への同時書き込みはサポートされていません。
 
 ## アダプターエコシステム (v0.8以降)
 
-カスタムアダプターを作成して、ツール呼び出しを任意のバックエンドにディスパッチできます。
+カスタムアダプターを作成して、任意のバックエンドにツールの呼び出しをディスパッチします。
 
 ### 公式アダプター
 
 | アダプター | 説明 | インストール |
-| --------- | ------------- | --------- |
+|---------|-------------|---------|
 | [nexus-router-adapter-http](https://github.com/mcp-tool-shop-org/nexus-router-adapter-http) | HTTP/RESTディスパッチ | `pip install nexus-router-adapter-http` |
 | [nexus-router-adapter-stdout](https://github.com/mcp-tool-shop-org/nexus-router-adapter-stdout) | デバッグログ | `pip install nexus-router-adapter-stdout` |
 
@@ -220,27 +221,27 @@ print(result.render())  # Human-readable validation report
 
 ## バージョン管理と安定性
 
-### v1.x の保証
+### v1.x の保証事項
 
-以下の機能は **v1.x で安定しています**（v2.0 でのみ互換性のない変更があります）。
+以下の項目は、**v1.xで安定している**（v2.0でのみ互換性のない変更があります）。
 
-| 契約 | 範囲 |
-| ---------- | ------- |
-| 検証チェックID | `LOAD_OK`, `PROTOCOL_FIELDS`, `MANIFEST_*` など。 |
+| 契約 | スコープ |
+|----------|-------|
+| 検証チェックID | `LOAD_OK`, `PROTOCOL_FIELDS`, `MANIFEST_*` など |
 | マニフェストスキーマ | `schema_version: 1` |
 | アダプターファクトリのシグネチャ | `create_adapter(*, adapter_id=None, **config)` |
-| 機能セット | `dry_run`, `apply`, `timeout`, `external`（追加機能のみ） |
-| イベントタイプ | コアイベントペイロード（追加機能のみ） |
+| 機能セット | `dry_run`, `apply`, `timeout`, `external`（追加のみ） |
+| イベントタイプ | コアイベントペイロード（追加のみ） |
 
 ### 非推奨ポリシー
 
 - マイナーバージョンで警告とともに非推奨がアナウンスされます。
 - 次のメジャーバージョンで削除されます。
-- アップグレードに関する情報は、リリース時の変更ログに記載されています。
+- アップグレードに関する情報は、リリース変更ログに記載されています。
 
 ### アダプターの互換性
 
-アダプターは、サポートするルーターのバージョンをマニフェストに記述します。
+アダプターは、サポートするルーターのバージョンをマニフェストに宣言します。
 
 ```python
 ADAPTER_MANIFEST = {
@@ -250,6 +251,26 @@ ADAPTER_MANIFEST = {
 ```
 
 `validate_adapter()` ツールは、互換性をチェックします。
+
+## セキュリティとデータスコープ
+
+Nexus-routerは**ライブラリ**です。CLI、デーモン、ネットワークリスナーはありません。
+
+- **アクセスされるデータ:** ツール呼び出しのペイロードはアダプターを介してルーティングされ、イベントストア（SQLiteまたはインメモリ）、プロビナンスレコード（SHA256ハッシュ、追記専用）、検証用のJSONスキーマが含まれます。
+- **アクセスされないデータ:** デフォルトでは、ネットワークリクエストは行われず、ユーザー認証情報も使用されず、テレメトリも収集されません。
+- **ポリシーの適用:** `allow_apply: false` は破壊的な操作を防止し、`max_steps` は実行範囲を制限し、スキーマ検証は不正な入力を拒否します。
+- **テレメトリなし:** 何も収集せず、何も送信しません。
+
+## スコアカード
+
+| カテゴリ | スコア | 備考 |
+|----------|-------|-------|
+| A. セキュリティ | 10/10 | SECURITY.md、ポリシー適用、追記専用のプロビナンス |
+| B. エラー処理 | 10/10 | スキーマ検証、構造化された結果、正常なエラー処理 |
+| C. 運用ドキュメント | 10/10 | README、CHANGELOG、アーキテクチャ、アダプター仕様、クイックスタート |
+| D. リリースの品質 | 10/10 | CI（lint + mypy + 357テスト）、カバレッジ、依存関係監査、検証 |
+| E. アイデンティティ | 10/10 | ロゴ、翻訳、ランディングページ |
+| **Total** | **50/50** | |
 
 ---
 

@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="README.ja.md">日本語</a> | <a href="README.md">English</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
+  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
 </p>
 
 <p align="center">
@@ -9,6 +9,7 @@
 <p align="center">
   <a href="https://github.com/mcp-tool-shop-org/nexus-router/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/nexus-router/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://pypi.org/project/nexus-router/"><img src="https://img.shields.io/pypi/v/nexus-router" alt="PyPI" /></a>
+  <a href="https://codecov.io/gh/mcp-tool-shop-org/nexus-router"><img src="https://img.shields.io/codecov/c/github/mcp-tool-shop-org/nexus-router" alt="Coverage" /></a>
   <a href="https://github.com/mcp-tool-shop-org/nexus-router/blob/main/LICENSE"><img src="https://img.shields.io/github/license/mcp-tool-shop-org/nexus-router" alt="License: MIT" /></a>
   <a href="https://pypi.org/project/nexus-router/"><img src="https://img.shields.io/pypi/pyversions/nexus-router" alt="Python versions" /></a>
   <a href="https://mcp-tool-shop-org.github.io/nexus-router/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page" /></a>
@@ -20,18 +21,18 @@
 
 ## 平台理念
 
-- **路由器是核心** —— 所有执行流程都通过事件日志进行。
-- **适配器是公民** —— 它们必须遵循契约，否则无法运行。
-- **契约优先于约定** —— 稳定性保证的版本化并强制执行。
-- **执行前回放** —— 每次运行都可以在事后进行验证。
-- **验证胜于信任** —— `validate_adapter()` 在适配器触及生产环境之前运行。
-- **自描述的生态系统** —— 清单生成文档，而不是反过来。
+- **路由器是规则**——所有执行流程都通过事件日志进行。
+- **适配器是公民**——它们必须遵守契约，否则无法运行。
+- **契约优先于约定**——稳定性保证的版本化并强制执行。
+- **执行前回放**——每次运行都可以在事后进行验证。
+- **验证胜于信任**——`validate_adapter()` 在适配器触及生产环境之前运行。
+- **自描述的生态系统**——文档由清单生成，而不是反过来。
 
 ## 品牌 + 工具 ID
 
 | 键 | 值 |
-| ----- | ------- |
-| 品牌 / 仓库 | `nexus-router` |
+|-----|-------|
+| 品牌/仓库 | `nexus-router` |
 | Python 包 | `nexus_router` |
 | MCP 工具 ID | `nexus-router.run` |
 | 作者 | [mcp-tool-shop](https://github.com/mcp-tool-shop-org) |
@@ -74,7 +75,7 @@ resp = run({"goal": "demo"}, db_path="nexus-router.db")
 
 ## 可移植性 (v0.3+)
 
-将运行结果导出为可移植的包，并导入到其他数据库中：
+将运行结果导出为可移植的包，并导入到其他数据库：
 
 ```python
 from nexus_router.tool import run, export, import_bundle, replay
@@ -138,31 +139,31 @@ resp = run({
 
 ### 子进程适配器
 
-用于调用外部命令，遵循以下契约：
+使用以下契约调用外部命令：
 
 ```bash
 <base_cmd> call <tool> <method> --json-args-file <path>
 ```
 
 外部命令必须：
-- 从 `args` 文件中读取 JSON 负载：`{"tool": "...", "method": "...", "args": {...}}`
+- 从 `args` 文件读取 JSON 负载：`{"tool": "...", "method": "...", "args": {...}}`
 - 在成功时将 JSON 结果打印到标准输出。
-- 在成功时返回代码 0，失败时返回非零代码。
+- 在成功时返回代码 0，在失败时返回非零代码。
 
-错误代码：`TIMEOUT`、`NONZERO_EXIT`、`INVALID_JSON_OUTPUT`、`COMMAND_NOT_FOUND`
+错误代码：`TIMEOUT`，`NONZERO_EXIT`，`INVALID_JSON_OUTPUT`，`COMMAND_NOT_FOUND`
 
 ### 内置适配器
 
 - `NullAdapter`：返回模拟输出（默认，用于 `dry_run`）。
 - `FakeAdapter`：用于测试的可配置响应。
 
-## 本版本的特点（以及不具备的特点）
+## 此版本的特点（以及不具备的特点）
 
 v1.1 是一个**平台级**的、基于事件驱动的路由器，拥有完整的适配器生态系统（16 个模块，346 个测试）：
 
 **核心路由器：**
 - 具有单调递增序列的事件日志。
-- 策略控制（`allow_apply`、`max_steps`）。
+- 策略控制（`allow_apply`，`max_steps`）。
 - 对所有请求进行模式验证。
 - 包含 SHA256 摘要的溯源包。
 - 具有完整性验证的导出/导入功能。
@@ -170,10 +171,10 @@ v1.1 是一个**平台级**的、基于事件驱动的路由器，拥有完整�
 - 错误分类：操作错误与程序错误。
 
 **适配器生态系统：**
-- 形式化的适配器契约 ([ADAPTER_SPEC.md](ADAPTER_SPEC.md))。
-- `validate_adapter()` —— 兼容性检查工具。
-- `inspect_adapter()` —— 开发者体验的入口。
-- `generate_adapter_docs()` —— 自动生成的文档。
+- 具有正式适配器契约的文档 ([ADAPTER_SPEC.md](ADAPTER_SPEC.md))。
+- `validate_adapter()`：合规性检查工具。
+- `inspect_adapter()`：开发者体验入口。
+- `generate_adapter_docs()`：自动生成的文档。
 - 带有验证网关的 CI 模板。
 - 2 分钟即可上手的适配器模板。
 
@@ -188,7 +189,7 @@ v1.1 是一个**平台级**的、基于事件驱动的路由器，拥有完整�
 ### 官方适配器
 
 | 适配器 | 描述 | 安装 |
-| --------- | ------------- | --------- |
+|---------|-------------|---------|
 | [nexus-router-adapter-http](https://github.com/mcp-tool-shop-org/nexus-router-adapter-http) | HTTP/REST 分发 | `pip install nexus-router-adapter-http` |
 | [nexus-router-adapter-stdout](https://github.com/mcp-tool-shop-org/nexus-router-adapter-stdout) | 调试日志 | `pip install nexus-router-adapter-stdout` |
 
@@ -220,17 +221,17 @@ print(result.render())  # Human-readable validation report
 
 ## 版本控制与稳定性
 
-### v1.x 版本保证
+### v1.x 保证
 
-以下内容在 v1.x 版本中是稳定的（仅在 v2.0 版本中存在重大更改）：
+以下内容在 v1.x 版本中是稳定的（v2.0 版本中仅有破坏性更改）：
 
-| 协议 | 范围 |
-| ---------- | ------- |
+| 接口 | 范围 |
+|----------|-------|
 | 验证检查 ID | `LOAD_OK`, `PROTOCOL_FIELDS`, `MANIFEST_*` 等。 |
 | 清单模式 | `schema_version: 1` |
 | 适配器工厂签名 | `create_adapter(*, adapter_id=None, **config)` |
-| 能力集合 | `dry_run`（试运行）, `apply`（应用）, `timeout`（超时）, `external`（外部，仅为附加项） |
-| 事件类型 | 核心事件负载（仅为附加项） |
+| 能力集合 | `dry_run`（试运行）, `apply`（应用）, `timeout`（超时）, `external`（外部，仅为新增） |
+| 事件类型 | 核心事件负载（仅为新增） |
 
 ### 弃用策略
 
@@ -250,6 +251,26 @@ ADAPTER_MANIFEST = {
 ```
 
 `validate_adapter()` 工具用于检查兼容性。
+
+## 安全性和数据范围
+
+Nexus-router 是一个 **库**，它没有命令行界面，没有守护进程，也没有网络监听器。
+
+- **涉及的数据：** 工具调用负载通过适配器路由，事件存储（SQLite 或内存），溯源记录（SHA256 摘要，仅追加），用于验证的 JSON 模式。
+- **未涉及的数据：** 默认情况下，没有网络请求，没有用户凭据，没有遥测数据。
+- **策略执行：** `allow_apply: false` 阻止破坏性操作，`max_steps` 限制执行范围，模式验证拒绝格式错误的输入。
+- **无遥测：** 不收集任何数据，也不发送任何数据。
+
+## 评估表
+
+| 类别 | 分数 | 备注 |
+|----------|-------|-------|
+| A. 安全性 | 10/10 | SECURITY.md，策略执行，仅追加的溯源记录 |
+| B. 错误处理 | 10/10 | 模式验证，结构化结果，优雅降级 |
+| C. 运维文档 | 10/10 | README，CHANGELOG，**架构**，ADAPTER_SPEC，QUICKSTART |
+| D. 发布质量 | 10/10 | CI（lint + mypy + 357 个测试），覆盖率，依赖项审计，验证 |
+| E. 标识 | 10/10 | Logo，翻译，着陆页 |
+| **Total** | **50/50** | |
 
 ---
 

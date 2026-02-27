@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.md">English</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
+  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
 </p>
 
 <p align="center">
@@ -9,12 +9,13 @@
 <p align="center">
   <a href="https://github.com/mcp-tool-shop-org/nexus-router/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/nexus-router/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://pypi.org/project/nexus-router/"><img src="https://img.shields.io/pypi/v/nexus-router" alt="PyPI" /></a>
+  <a href="https://codecov.io/gh/mcp-tool-shop-org/nexus-router"><img src="https://img.shields.io/codecov/c/github/mcp-tool-shop-org/nexus-router" alt="Coverage" /></a>
   <a href="https://github.com/mcp-tool-shop-org/nexus-router/blob/main/LICENSE"><img src="https://img.shields.io/github/license/mcp-tool-shop-org/nexus-router" alt="License: MIT" /></a>
   <a href="https://pypi.org/project/nexus-router/"><img src="https://img.shields.io/pypi/pyversions/nexus-router" alt="Python versions" /></a>
   <a href="https://mcp-tool-shop-org.github.io/nexus-router/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page" /></a>
 </p>
 
-Enrutador MCP basado en eventos, con trazabilidad e integridad.
+Enrutador MCP basado en eventos con trazabilidad e integridad.
 
 ---
 
@@ -22,15 +23,15 @@ Enrutador MCP basado en eventos, con trazabilidad e integridad.
 
 - **El enrutador es la ley:** todo el flujo de ejecución pasa por el registro de eventos.
 - **Los adaptadores son ciudadanos:** deben cumplir con el contrato o no se ejecutan.
-- **Contratos sobre convenciones:** las garantías de estabilidad están versionadas y se aplican.
-- **Reproducción antes de la ejecución:** cada ejecución puede verificarse a posteriori.
+- **Contratos sobre convenciones:** las garantías de estabilidad están versionadas y se hacen cumplir.
+- **Reproducción antes de la ejecución:** cada ejecución se puede verificar a posteriori.
 - **Validación antes de la confianza:** `validate_adapter()` se ejecuta antes de que los adaptadores interactúen con el entorno de producción.
 - **Ecosistema auto-descriptivo:** los manifiestos generan la documentación, no al revés.
 
 ## Marca + ID de la herramienta
 
 | Clave | Valor |
-| ----- | ------- |
+|-----|-------|
 | Marca / repositorio | `nexus-router` |
 | Paquete de Python | `nexus_router` |
 | ID de la herramienta MCP | `nexus-router.run` |
@@ -66,7 +67,7 @@ print(resp["summary"])
 
 ## Persistencia
 
-La ruta predeterminada `db_path=":memory:"` es efímera.  Para persistir las ejecuciones, especifique una ruta de archivo:
+La ruta predeterminada `db_path=":memory:"` es efímera.  Pasa una ruta de archivo para persistir las ejecuciones:
 
 ```python
 resp = run({"goal": "demo"}, db_path="nexus-router.db")
@@ -74,7 +75,7 @@ resp = run({"goal": "demo"}, db_path="nexus-router.db")
 
 ## Portabilidad (v0.3+)
 
-Exporte las ejecuciones como paquetes portátiles e impórtelas a otras bases de datos:
+Exporta las ejecuciones como paquetes portátiles e impórtalas a otras bases de datos:
 
 ```python
 from nexus_router.tool import run, export, import_bundle, replay
@@ -94,7 +95,7 @@ print(result["replay_ok"])        # True (auto-verified)
 
 **Modos de conflicto:**
 - `reject_on_conflict` (predeterminado): Falla si `run_id` ya existe.
-- `new_run_id`: Genera un nuevo `run_id` y remapea todas las referencias.
+- `new_run_id`: Genera un nuevo `run_id`, remapea todas las referencias.
 - `overwrite`: Reemplaza la ejecución existente.
 
 ## Inspección y reproducción (v0.2+)
@@ -114,7 +115,7 @@ print(result["violations"])  # [] or list of issues
 
 ## Despacho de adaptadores (v0.4+)
 
-Los adaptadores ejecutan llamadas a la herramienta. Pase un adaptador a `run()`:
+Los adaptadores ejecutan llamadas a la herramienta. Pasa un adaptador a `run()`:
 
 ```python
 from nexus_router.tool import run
@@ -138,7 +139,7 @@ resp = run({
 
 ### SubprocessAdapter
 
-Llama a comandos externos con este contrato:
+Ejecuta comandos externos con este contrato:
 
 ```bash
 <base_cmd> call <tool> <method> --json-args-file <path>
@@ -146,8 +147,8 @@ Llama a comandos externos con este contrato:
 
 El comando externo debe:
 - Leer el payload JSON del archivo de argumentos: `{"tool": "...", "method": "...", "args": {...}}`
-- Imprimir el resultado JSON en la salida estándar en caso de éxito.
-- Salir con código 0 en caso de éxito y con un código distinto de cero en caso de fallo.
+- Imprimir el resultado JSON a la salida estándar en caso de éxito.
+- Salir con código 0 en caso de éxito, con un código distinto de cero en caso de fallo.
 
 Códigos de error: `TIMEOUT`, `NONZERO_EXIT`, `INVALID_JSON_OUTPUT`, `COMMAND_NOT_FOUND`
 
@@ -179,24 +180,24 @@ v1.1 es un enrutador basado en eventos de **calidad de plataforma** con un ecosi
 
 ## Concurrencia
 
-Un solo escritor por ejecución. No se admiten escritores concurrentes para el mismo `run_id`.
+Un solo escritor por ejecución. No se admiten escritores concurrentes al mismo `run_id`.
 
 ## Ecosistema de adaptadores (v0.8+)
 
-Cree adaptadores personalizados para enviar llamadas a herramientas a cualquier backend.
+Crea adaptadores personalizados para enviar llamadas a herramientas a cualquier backend.
 
 ### Adaptadores oficiales
 
 | Adaptador | Descripción | Instalación |
-| --------- | ------------- | --------- |
+|---------|-------------|---------|
 | [nexus-router-adapter-http](https://github.com/mcp-tool-shop-org/nexus-router-adapter-http) | Despacho HTTP/REST | `pip install nexus-router-adapter-http` |
 | [nexus-router-adapter-stdout](https://github.com/mcp-tool-shop-org/nexus-router-adapter-stdout) | Registro de depuración | `pip install nexus-router-adapter-stdout` |
 
-Consulte [ADAPTERS.generated.md](ADAPTERS.generated.md) para obtener la documentación completa.
+Consulta [ADAPTERS.generated.md](ADAPTERS.generated.md) para obtener la documentación completa.
 
 ### Creación de adaptadores
 
-Utilice la [plantilla de adaptador](https://github.com/mcp-tool-shop-org/nexus-router-adapter-template) para crear nuevos adaptadores en 2 minutos:
+Utiliza la [plantilla de adaptador](https://github.com/mcp-tool-shop-org/nexus-router-adapter-template) para crear nuevos adaptadores en 2 minutos:
 
 ```bash
 # Fork the template, then:
@@ -204,7 +205,7 @@ pip install -e ".[dev]"
 pytest -v  # Validates against nexus-router spec
 ```
 
-Consulte [ADAPTER_SPEC.md](ADAPTER_SPEC.md) para obtener el contrato completo.
+Consulta [ADAPTER_SPEC.md](ADAPTER_SPEC.md) para obtener el contrato completo.
 
 ### Herramientas de validación
 
@@ -218,23 +219,23 @@ result = inspect_adapter(
 print(result.render())  # Human-readable validation report
 ```
 
-## Control de versiones y estabilidad
+## Versionado y estabilidad
 
-### Garantías de la versión 1.x
+### Garantías de v1.x
 
-Los siguientes elementos son **estables en la versión 1.x** (solo se realizan cambios importantes en la versión 2.0):
+Los siguientes elementos son **estables en la versión v1.x** (solo cambios importantes en la versión v2.0):
 
 | Contrato | Alcance |
-| ---------- | ------- |
-| Identificadores de verificación de validación | `LOAD_OK`, `PROTOCOL_FIELDS`, `MANIFEST_*`, etc. |
+|----------|-------|
+| Identificadores de verificación | `LOAD_OK`, `PROTOCOL_FIELDS`, `MANIFEST_*`, etc. |
 | Esquema del manifiesto | `schema_version: 1` |
 | Firma de la fábrica de adaptadores | `create_adapter(*, adapter_id=None, **config)` |
-| Conjunto de capacidades | `dry_run`, `apply`, `timeout`, `external` (solo se agregan) |
-| Tipos de eventos | Cargas útiles de eventos principales (solo se agregan) |
+| Conjunto de capacidades | `dry_run`, `apply`, `timeout`, `external` (solo adiciones) |
+| Tipos de eventos | Cargas útiles de eventos principales (solo adiciones) |
 
 ### Política de obsolescencia
 
-- Las funcionalidades obsoletas se anuncian en versiones menores con advertencias.
+- Las obsolescencias se anuncian en versiones menores con advertencias.
 - Se eliminan en la siguiente versión principal.
 - Se proporcionan notas de actualización en el registro de cambios de la versión.
 
@@ -250,6 +251,26 @@ ADAPTER_MANIFEST = {
 ```
 
 La herramienta `validate_adapter()` verifica la compatibilidad.
+
+## Seguridad y alcance de datos
+
+Nexus-router es una **biblioteca**: no tiene una interfaz de línea de comandos, ni un demonio, ni un listener de red.
+
+- **Datos que se utilizan:** cargas útiles de llamadas a herramientas que se enrutan a través de adaptadores, almacenamiento de eventos (SQLite o en memoria), registros de procedencia (hashes SHA256, solo escritura), esquemas JSON para validación.
+- **Datos que NO se utilizan:** no hay solicitudes de red por defecto, no hay credenciales de usuario, no hay telemetría.
+- **Cumplimiento de políticas:** `allow_apply: false` previene operaciones destructivas, `max_steps` limita el alcance de la ejecución, la validación de esquemas rechaza entradas incorrectas.
+- **Sin telemetría:** no recopila nada, no envía nada.
+
+## Cuadro de evaluación
+
+| Categoría | Puntuación | Notas |
+|----------|-------|-------|
+| A. Seguridad | 10/10 | SECURITY.md, cumplimiento de políticas, registros de procedencia de solo escritura. |
+| B. Manejo de errores | 10/10 | Validación de esquemas, resultados estructurados, degradación gradual. |
+| C. Documentación para operadores | 10/10 | README, CHANGELOG, ARCHITECTURE, ADAPTER_SPEC, QUICKSTART. |
+| D. Higiene en la entrega | 10/10 | CI (lint + mypy + 357 pruebas), cobertura, auditoría de dependencias, verificación. |
+| E. Identidad | 10/10 | Logotipo, traducciones, página de inicio. |
+| **Total** | **50/50** | |
 
 ---
 
