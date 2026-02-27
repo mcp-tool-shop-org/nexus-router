@@ -2,49 +2,38 @@
 
 ## Supported Versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.1.x   | :white_check_mark: |
+| Version | Supported |
+|---------|-----------|
+| 1.x     | Yes       |
+| < 1.0   | No        |
 
 ## Reporting a Vulnerability
 
-**Please do not file public issues for security vulnerabilities.**
+If you discover a security vulnerability in nexus-router, please report it responsibly.
 
-If you discover a security vulnerability in nexus-router, please report it privately:
+**Email:** 64996768+mcp-tool-shop@users.noreply.github.com
 
-1. **Email**: Send details to security@mcp-tool-shop.dev
-2. **Include**:
-   - Description of the vulnerability
-   - Steps to reproduce
-   - Potential impact
-   - Any suggested fixes (optional)
+**What to include:**
+- Description of the vulnerability
+- Steps to reproduce
+- Affected version(s)
+- Potential impact
 
-## Response Timeline
+**Response timeline:**
+- Acknowledgement within 48 hours
+- Assessment within 7 days
+- Fix or mitigation within 30 days for confirmed issues
 
-- **Acknowledgment**: Within 48 hours
-- **Initial assessment**: Within 7 days
-- **Resolution target**: Within 30 days for critical issues
+**Please do NOT:**
+- Open a public GitHub issue for security vulnerabilities
+- Exploit the vulnerability against other users
 
-## Security Considerations
+## Scope
 
-### Event Store
+Nexus-router is an **event-sourced MCP router library** that routes tool calls through adapters with provenance tracking.
 
-- SQLite database files may contain sensitive execution logs
-- Use appropriate file permissions for persistent databases
-- Consider encryption at rest for production deployments
-
-### Policy Enforcement
-
-- `allow_apply: false` prevents destructive operations
-- `max_steps` limits execution scope
-- Schema validation rejects malformed requests
-
-### Provenance
-
-- SHA256 digests provide integrity verification
-- Provenance records are append-only
-- Method IDs are immutable once defined
-
-## Acknowledgments
-
-We appreciate responsible disclosure and will acknowledge security researchers who report valid vulnerabilities (with permission).
+- **Data touched:** tool call payloads (routed to adapters), event store (SQLite or in-memory), provenance records (SHA256 digests, append-only), JSON schemas for validation.
+- **Data NOT touched:** no network requests by default (adapters may make requests per their own contract), no user credentials, no telemetry.
+- **Policy enforcement:** `allow_apply: false` prevents destructive operations, `max_steps` limits execution scope, schema validation rejects malformed requests.
+- **Provenance integrity:** SHA256 digests, append-only records, immutable method IDs once defined.
+- **No telemetry:** collects nothing, sends nothing.

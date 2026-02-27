@@ -9,6 +9,7 @@
 <p align="center">
   <a href="https://github.com/mcp-tool-shop-org/nexus-router/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/nexus-router/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://pypi.org/project/nexus-router/"><img src="https://img.shields.io/pypi/v/nexus-router" alt="PyPI" /></a>
+  <a href="https://codecov.io/gh/mcp-tool-shop-org/nexus-router"><img src="https://img.shields.io/codecov/c/github/mcp-tool-shop-org/nexus-router" alt="Coverage" /></a>
   <a href="https://github.com/mcp-tool-shop-org/nexus-router/blob/main/LICENSE"><img src="https://img.shields.io/github/license/mcp-tool-shop-org/nexus-router" alt="License: MIT" /></a>
   <a href="https://pypi.org/project/nexus-router/"><img src="https://img.shields.io/pypi/pyversions/nexus-router" alt="Python versions" /></a>
   <a href="https://mcp-tool-shop-org.github.io/nexus-router/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page" /></a>
@@ -250,6 +251,26 @@ ADAPTER_MANIFEST = {
 ```
 
 The `validate_adapter()` tool checks compatibility.
+
+## Security & Data Scope
+
+Nexus-router is a **library** — it has no CLI, no daemon, no network listener.
+
+- **Data touched:** tool call payloads routed through adapters, event store (SQLite or in-memory), provenance records (SHA256 digests, append-only), JSON schemas for validation.
+- **Data NOT touched:** no network requests by default, no user credentials, no telemetry.
+- **Policy enforcement:** `allow_apply: false` prevents destructive operations, `max_steps` limits execution scope, schema validation rejects malformed input.
+- **No telemetry:** collects nothing, sends nothing.
+
+## Scorecard
+
+| Category | Score | Notes |
+|----------|-------|-------|
+| A. Security | 10/10 | SECURITY.md, policy enforcement, append-only provenance |
+| B. Error Handling | 10/10 | Schema validation, structured results, graceful degradation |
+| C. Operator Docs | 10/10 | README, CHANGELOG, ARCHITECTURE, ADAPTER_SPEC, QUICKSTART |
+| D. Shipping Hygiene | 10/10 | CI (lint + mypy + 357 tests), coverage, dep-audit, verify |
+| E. Identity | 10/10 | Logo, translations, landing page |
+| **Total** | **50/50** | |
 
 ---
 

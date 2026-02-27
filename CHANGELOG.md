@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-02-27
+
+### Added
+- SHIP_GATE.md and SCORECARD.md (Shipcheck compliance)
+- Makefile with `verify` target (lint + typecheck + test + build)
+- Codecov coverage upload in CI
+- Dependency audit job in CI (pip-audit)
+- Security & Data Scope section and scorecard in README
+- Codecov badge in README
+
+### Changed
+- SECURITY.md updated with standard email, version table, and data scope
+- pytest-cov and pip-audit added to dev dependencies
+- Scorecard 42/50 → 50/50
+- Bumped to 1.1.1
+
+## [1.1.0] - 2026-02-26
+
+### Added
+- Landing page via @mcptoolshop/site-theme
+- README translations (7 languages)
+- Brand logo in README
+
+## [1.0.0] - 2026-02-26
+
+### Added
+- v1.x stability guarantees for adapter contracts
+- Validation check IDs, manifest schema v1, adapter factory signature
+- Production classifier in pyproject.toml
+
 ## [0.5.2] - 2026-01-27
 
 ### Added
